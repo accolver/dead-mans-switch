@@ -1,5 +1,0 @@
-{
-  "imports": {
-    "shamirs-secret-sharing": "npm:shamirs-secret-sharing@^2.0.0"
-  }
-}

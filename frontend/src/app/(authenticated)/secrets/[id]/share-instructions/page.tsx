@@ -46,7 +46,7 @@ function ShareDisplay({
   return (
     <div className="space-y-2">
       <Label htmlFor={`share-${shareNumber}`} className="text-lg font-semibold">
-        {shareName} (Share {shareNumber})
+        Share {shareNumber}: {shareName}
       </Label>
       <div className="flex items-center space-x-2">
         <Input
@@ -94,47 +94,53 @@ function ShareInstructionsContent() {
 
   useEffect(() => {
     const id = searchParams.get("secretId")
-    const sharesHexJson = searchParams.get("userManagedSharesHexJson")
     const total = parseInt(searchParams.get("sss_shares_total") || "0", 10)
     const threshold = parseInt(searchParams.get("sss_threshold") || "0", 10)
     const rName = searchParams.get("recipient_name")
     const rEmail = searchParams.get("recipient_email")
 
-    if (
-      !id ||
-      !sharesHexJson ||
-      total < 2 ||
-      threshold < 2 ||
-      threshold > total
-    ) {
+    if (!id || total < 2 || threshold < 2 || threshold > total) {
       setError(
         "Critical information missing or invalid. Unable to display share instructions. Please try creating the secret again.",
       )
       return
     }
 
-    let parsedShares: string[] = []
-    try {
-      parsedShares = JSON.parse(sharesHexJson)
-      if (
-        !Array.isArray(parsedShares) ||
-        parsedShares.length === 0 ||
-        parsedShares.length !== total - 1
-      ) {
-        throw new Error(
-          "Parsed shares data is invalid or doesn't match total count.",
-        )
-      }
-    } catch (e) {
-      console.error("Error parsing sharesHexJson:", e)
+    // Read shares from localStorage
+    const local = localStorage.getItem(`keyfate:userManagedShares:${id}`)
+    if (!local) {
       setError(
-        "Failed to parse share data. Please try creating the secret again.",
+        "Could not find your shares in this browser. They may have expired or been cleared. Please re-create the secret.",
       )
       return
     }
-
+    let parsed: { shares: string[]; expiresAt: number }
+    try {
+      parsed = JSON.parse(local)
+      if (
+        !Array.isArray(parsed.shares) ||
+        typeof parsed.expiresAt !== "number"
+      ) {
+        throw new Error()
+      }
+    } catch {
+      setError("Failed to parse your shares. Please re-create the secret.")
+      return
+    }
+    if (Date.now() > parsed.expiresAt) {
+      // Delete the shares from localStorage
+      localStorage.removeItem(`keyfate:userManagedShares:${id}`)
+      setError(
+        "Your shares have expired (over 2 hours old). Please re-create the secret.",
+      )
+      return
+    }
+    if (parsed.shares.length !== total - 1) {
+      setError("Share count mismatch. Please re-create the secret.")
+      return
+    }
     setSecretId(id)
-    setUserManagedShares(parsedShares)
+    setUserManagedShares(parsed.shares)
     setSssSharesTotal(total)
     setSssThreshold(threshold)
     setRecipientName(rName)
@@ -270,9 +276,9 @@ function ShareInstructionsContent() {
             if (index === 0) {
               shareName = "Your Personal Share"
             } else if (index === 1) {
-              shareName = `Primary Recipient's Share (for ${recipientName || "N/A"})`
+              shareName = `Primary Recipient's (${recipientName || "N/A"}) Share`
             } else {
-              shareName = `Additional Distributable Share`
+              shareName = "Additional Distributable Share"
             }
 
             return (
@@ -281,7 +287,7 @@ function ShareInstructionsContent() {
                 <ShareDisplay
                   shareHex={shareHex}
                   shareNumber={trueShareNumber}
-                  shareName={`${shareName} (Display #${shareUiNumber})`}
+                  shareName={shareName}
                 />
               </div>
             )

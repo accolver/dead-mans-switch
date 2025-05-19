@@ -125,10 +125,16 @@ export function NewSecretForm() {
         setError(result.warning) // Display warning but proceed with redirect
       }
 
-      // Redirect to the new share instructions page
+      // Store shares in localStorage with 2 hour expiry
+      const expiresAt = Date.now() + 2 * 60 * 60 * 1000 // 2 hours in ms
+      localStorage.setItem(
+        `keyfate:userManagedShares:${result.secretId}`,
+        JSON.stringify({ shares: userManagedShares, expiresAt }),
+      )
+
+      // Redirect to the new share instructions page (no shares in URL)
       const queryParams = new URLSearchParams({
         secretId: result.secretId,
-        userManagedSharesHexJson, // Pass all user-managed shares as a JSON string array
         sss_shares_total: data.sss_shares_total.toString(),
         sss_threshold: data.sss_threshold.toString(),
         recipient_name: data.recipient_name,
