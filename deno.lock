@@ -1,0 +1,16 @@
+{
+  "version": "5",
+  "specifiers": {
+    "npm:shamirs-secret-sharing@2": "2.0.0"
+  },
+  "npm": {
+    "shamirs-secret-sharing@2.0.0": {
+      "integrity": "sha512-HI+g+p5dFxDdwnBPfgp9wOiVa0Ix2KflpPooHOJCQDo13WDQENpXcZa/vaxfk1e7OM+odg+KnwP+xS5wbLGH4w=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:shamirs-secret-sharing@2"
+    ]
+  }
+}
