@@ -15,8 +15,15 @@
 - [x] Enable users to pause and reactivate secrets
 - [x] Reminders to check in
 - [ ] ToS and Privacy Policy
-- [ ] New secret email
-- [ ] SMS reminders
-- [ ] 3rd-party security audit
 - [ ] Email verification for user.meta.email_verified not being set to true. Also need to enable email verify with OTP.
 - [ ]  Deploy to Supabase prod and be comfortable with DB management
+- [ ] Unauthenticated page where people can explore Shamir's Secret Sharing
+  - [ ] One for reconstructing a secret from shares
+  - [ ] One for generating new shares
+    - [ ] Big disclaimers that this is for exploration / learning only. You should not input actual secrets here; if you want to do that, use KeyFates (give them a link to sign in / up)
+- [x] Add a link to sign up from the sign in form. 
+
+## v2 Tasks
+
+- [ ] SMS reminders
+- [ ] 3rd-party security audit
