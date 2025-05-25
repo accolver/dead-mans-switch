@@ -51,13 +51,14 @@ export async function DELETE(
       server_share: null,
       iv: null,
       auth_tag: null,
+      status: "paused", // Automatically pause the secret when server share is deleted
     };
 
-    // Delete the server share by setting it to null
+    // Delete the server share by setting it to null and pause the secret
     // Also clear the IV and auth_tag since they're no longer needed
+    // Pausing ensures no emails will be sent for this secret
     const { error: updateError } = await supabase
       .from("secrets")
-      // TODO: Ensure this actually works
       .update(update)
       .eq("id", id)
       .eq("user_id", user.id);

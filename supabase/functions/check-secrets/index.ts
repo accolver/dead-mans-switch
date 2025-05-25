@@ -41,7 +41,11 @@ async function processSecret(
     }
 
     if (!secret.server_share) {
-      throw new Error("Secret server share not found");
+      // Skip secrets where server share has been deleted - they are essentially disabled
+      console.log(
+        `Skipping secret ${secret.id} - server share has been deleted`,
+      );
+      return { id: secret.id, status: "skipped" };
     }
 
     if (!secret.iv || !secret.auth_tag) {
@@ -108,12 +112,13 @@ Deno.serve(async (_req) => {
       },
     );
 
-    // Get secrets that need to be triggered
+    // Get secrets that need to be triggered (excluding those with deleted server shares)
     const { data: secrets, error: secretsError } = await supabaseAdmin
       .from("secrets")
       .select("*")
       .eq("status", "active")
       .eq("is_triggered", false)
+      .not("server_share", "is", null)
       .lte("next_check_in", new Date().toISOString());
 
     if (secretsError) {

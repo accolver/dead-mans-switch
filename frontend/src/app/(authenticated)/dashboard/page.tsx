@@ -66,11 +66,71 @@ export default async function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {secrets.map((secret) => (
-              <SecretCard secret={secret} key={secret.id} />
-            ))}
-          </div>
+          <>
+            {/* Active secrets */}
+            {secrets.filter((secret) => secret.server_share !== null).length >
+              0 && (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {secrets
+                  .filter((secret) => secret.server_share !== null)
+                  .map((secret) => (
+                    <SecretCard secret={secret} key={secret.id} />
+                  ))}
+              </div>
+            )}
+
+            {/* Secrets with deleted server shares - less prominent section */}
+            {secrets.filter((secret) => secret.server_share === null).length >
+              0 && (
+              <div className="mt-20">
+                <div className="mb-4 flex items-center gap-2">
+                  <h2 className="text-muted-foreground text-lg font-medium">
+                    Disabled Secrets
+                  </h2>
+                  <div className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs">
+                    Server share deleted
+                  </div>
+                </div>
+                <p className="text-muted-foreground mb-4 text-sm">
+                  These secrets have had their server share deleted and are
+                  effectively disabled. They serve as a record of what was
+                  created and to whom it was sent.
+                </p>
+                <div className="grid gap-4 opacity-60 md:grid-cols-2 lg:grid-cols-3">
+                  {secrets
+                    .filter((secret) => secret.server_share === null)
+                    .map((secret) => (
+                      <SecretCard secret={secret} key={secret.id} />
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Show empty state if all secrets have deleted server shares */}
+            {secrets.filter((secret) => secret.server_share !== null).length ===
+              0 &&
+              secrets.filter((secret) => secret.server_share === null).length >
+                0 && (
+                <div className="mb-8 rounded-lg border-2 border-dashed p-12 text-center">
+                  <div className="mx-auto max-w-sm">
+                    <AlertCircle className="text-muted-foreground mx-auto h-12 w-12" />
+                    <h2 className="mt-4 text-lg font-semibold">
+                      No active secrets
+                    </h2>
+                    <p className="text-muted-foreground mt-2 text-sm">
+                      All your secrets have been disabled. Create a new one to
+                      get started.
+                    </p>
+                    <Button asChild className="mt-4">
+                      <Link href="/secrets/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create New Secret
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              )}
+          </>
         )}
       </div>
     )

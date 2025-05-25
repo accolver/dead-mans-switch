@@ -146,8 +146,11 @@ export function SecretDetailsForm({ secret }: SecretDetailsFormProps) {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Server share has been deleted. The other shares can still be used to
-            reconstruct the secret.
+            <strong>Secret Disabled:</strong> The server share has been deleted
+            and this secret has been automatically paused. No reminder emails
+            will be sent. The secret serves only as a record of what was created
+            and to whom it was sent. The other shares can still be used to
+            reconstruct the secret if needed.
           </AlertDescription>
         </Alert>
       )}

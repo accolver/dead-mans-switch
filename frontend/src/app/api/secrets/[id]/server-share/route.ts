@@ -90,8 +90,11 @@ export async function GET(
     if (!secret.server_share || !secret.iv || !secret.auth_tag) {
       console.error("Secret data incomplete for decryption:", secret);
       return NextResponse.json(
-        { error: "Secret data is incomplete for decryption." },
-        { status: 500 },
+        {
+          error:
+            "This secret has been disabled. The server share has been deleted and is no longer available.",
+        },
+        { status: 410 }, // 410 Gone - resource no longer available
       );
     }
 

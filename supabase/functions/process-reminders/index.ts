@@ -152,8 +152,8 @@ async function processReminders(
           throw new Error("Secret not found");
         }
 
-        // Skip if secret is not active
-        if (secret.status !== "active") {
+        // Skip if secret is not active or server share has been deleted
+        if (secret.status !== "active" || !secret.server_share) {
           await supabaseAdmin
             .from("reminders")
             .update({ status: "cancelled" })
