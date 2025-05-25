@@ -7,6 +7,12 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
+  const cookieStore = await cookies();
+  const supabase = createRouteHandlerClient<Database>({
+    // @ts-expect-error
+    cookies: () => cookieStore,
+  });
+
   try {
     const supabaseAdmin = createClient<Database>(
       NEXT_PUBLIC_SUPABASE_URL,
@@ -21,10 +27,6 @@ export async function POST(req: Request) {
         },
       },
     );
-
-    const supabase = createRouteHandlerClient<Database>({
-      cookies,
-    });
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
