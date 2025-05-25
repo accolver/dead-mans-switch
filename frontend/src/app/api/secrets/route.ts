@@ -1,4 +1,4 @@
-import { Database } from "@/lib/database.types";
+import { Database } from "@/types";
 import { NEXT_PUBLIC_SUPABASE_URL } from "@/lib/env";
 import { SUPABASE_SERVICE_ROLE_KEY } from "@/lib/server-env";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const cookieStore = await cookies();
   const supabase = createRouteHandlerClient<Database>({
-    // @ts-expect-error
+    // @ts-expect-error - Supabase auth helpers expect different cookie format
     cookies: () => cookieStore,
   });
 

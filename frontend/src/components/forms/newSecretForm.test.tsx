@@ -10,12 +10,13 @@ vi.spyOn(encryption, "encryptMessage").mockImplementation(async (msg) => ({
   authTag: "authTag-mock",
 }))
 
+// @ts-expect-error - fetch is not defined in the global scope
 global.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
     json: () => Promise.resolve({ secretId: "test-id" }),
   }),
-) as any
+)
 
 describe("NewSecretForm", () => {
   beforeEach(() => {

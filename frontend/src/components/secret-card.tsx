@@ -2,23 +2,22 @@
 
 import { CheckInButton } from "@/components/check-in-button"
 import { TogglePauseButton } from "@/components/toggle-pause-button"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { useToast } from "@/hooks/use-toast"
-import { Database } from "@/lib/database.types"
-import { cn } from "@/lib/utils"
-import { Secret } from "@/types/secret"
-import { Clock, Pencil } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState, useMemo } from "react"
-import { format } from "timeago.js"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
+import { Secret } from "@/types"
+import { Clock, Pencil } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useMemo, useState } from "react"
+import { format } from "timeago.js"
 
 interface SecretCardProps {
   secret: Secret
@@ -79,8 +78,8 @@ export function SecretCard({ secret }: SecretCardProps) {
   const [statusBadge, setStatusBadge] = useState<StatusBadge>(
     getStatusBadge(secret.status, secret.next_check_in, secret.is_triggered),
   )
-  const [showMessage, setShowMessage] = useState(false)
-  const [decryptedMessage, setDecryptedMessage] = useState<string | null>(null)
+  const [showMessage] = useState(false)
+  const [decryptedMessage] = useState<string | null>(null)
 
   useEffect(() => {
     setStatusBadge(
@@ -125,34 +124,6 @@ export function SecretCard({ secret }: SecretCardProps) {
     }
     return details.join("\n")
   }
-
-  // TODO: Likely remove this
-  const decryptMessage = async () => {
-    try {
-      const response = await fetch("/api/decrypt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          encryptedMessage: secret.message,
-          iv: secret.iv,
-        }),
-      })
-
-      const data = await response.json()
-      if (data.error) throw new Error(data.error)
-
-      setDecryptedMessage(data.decryptedMessage)
-    } catch (error) {
-      console.error("Error decrypting message:", error)
-      setDecryptedMessage("Error decrypting message")
-    }
-  }
-
-  useEffect(() => {
-    if (showMessage && !decryptedMessage) {
-      decryptMessage()
-    }
-  }, [showMessage])
 
   const canCheckIn = useMemo(() => {
     if (!secretState.last_check_in) return true

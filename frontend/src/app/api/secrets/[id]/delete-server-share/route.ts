@@ -1,12 +1,11 @@
-import { Database } from "@/lib/database.types";
-import { Secret } from "@/types/secret";
+import { Database, Secret, SecretUpdate } from "@/types";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -16,7 +15,7 @@ export async function DELETE(
 
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({
-      // @ts-expect-error
+      // @ts-expect-error - cookies function signature mismatch with Next.js 15
       cookies: () => cookieStore,
     });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -48,15 +47,18 @@ export async function DELETE(
       );
     }
 
+    const update: SecretUpdate = {
+      server_share: null,
+      iv: null,
+      auth_tag: null,
+    };
+
     // Delete the server share by setting it to null
     // Also clear the IV and auth_tag since they're no longer needed
     const { error: updateError } = await supabase
       .from("secrets")
-      .update({
-        server_share: null,
-        iv: null,
-        auth_tag: null,
-      } as Partial<Secret>)
+      // TODO: Ensure this actually works
+      .update(update)
       .eq("id", id)
       .eq("user_id", user.id);
 

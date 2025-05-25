@@ -200,7 +200,7 @@ function ShareInstructionsContent() {
     )
   }
 
-  const usersPersonalShare = userManagedShares[0]
+  // const usersPersonalShare = userManagedShares[0]
   const additionalDistributableShares = userManagedShares.slice(2)
 
   return (
@@ -224,7 +224,7 @@ function ShareInstructionsContent() {
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 <li>
                   <strong>
-                    KeyFate's Share (Share 1 of {sssSharesTotal}):
+                    KeyFate&apos;s Share (Share 1 of {sssSharesTotal}):
                   </strong>{" "}
                   We securely store one share. This share alone cannot reveal
                   your secret. It will be sent to{" "}
@@ -245,7 +245,8 @@ function ShareInstructionsContent() {
                 {primaryRecipientShare && (
                   <li>
                     <strong>
-                      Primary Recipient's Share (Share 3 of {sssSharesTotal}):
+                      Primary Recipient&apos;s Share (Share 3 of{" "}
+                      {sssSharesTotal}):
                     </strong>{" "}
                     Displayed below as `Share #2`. This is for{" "}
                     {recipientName || "your primary recipient"}. You MUST send
@@ -270,13 +271,12 @@ function ShareInstructionsContent() {
 
           {userManagedShares.map((shareHex, index) => {
             let shareName = ""
-            let shareUiNumber = index + 1
-            let trueShareNumber = index + 2
+            const trueShareNumber = index + 2
 
             if (index === 0) {
               shareName = "Your Personal Share"
             } else if (index === 1) {
-              shareName = `Primary Recipient's (${recipientName || "N/A"}) Share`
+              shareName = `Primary Recipient&apos;s (${recipientName || "N/A"}) Share`
             } else {
               shareName = "Additional Distributable Share"
             }

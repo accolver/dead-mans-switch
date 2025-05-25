@@ -1,12 +1,12 @@
-import { Database } from "@/lib/database.types";
 import { decryptMessage } from "@/lib/encryption";
+import { Database, Secret, SecretUpdate } from "@/types";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const { searchParams } = new URL(req.url);
@@ -18,7 +18,7 @@ export async function GET(
 
   const cookieStore = await cookies();
   const supabase = createRouteHandlerClient<Database>({
-    // @ts-expect-error
+    // @ts-expect-error - cookies function signature mismatch with Next.js 15
     cookies: () => cookieStore,
   });
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -27,7 +27,10 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: existingSecret, error: fetchError } = await supabase
+  const { data: existingSecret, error: fetchError }: {
+    data: Secret | null;
+    error: Error | null;
+  } = await supabase
     .from("secrets")
     .select("*")
     .eq("id", id)
@@ -39,20 +42,22 @@ export async function GET(
   }
 
   if (
-    decrypt && (existingSecret as any).server_share &&
-    (existingSecret as any).iv &&
-    (existingSecret as any).auth_tag
+    decrypt &&
+    existingSecret.server_share &&
+    existingSecret.iv &&
+    existingSecret.auth_tag
   ) {
     // Decrypt the server share for the owner
     try {
+      const secret = existingSecret as Secret;
       const decryptedServerShare = await decryptMessage(
-        (existingSecret as any).server_share,
-        Buffer.from((existingSecret as any).iv, "base64"),
-        Buffer.from((existingSecret as any).auth_tag, "base64"),
+        secret.server_share!,
+        Buffer.from(secret.iv!, "base64"),
+        Buffer.from(secret.auth_tag!, "base64"),
       );
       return NextResponse.json({
         secret: {
-          ...(existingSecret as any),
+          ...existingSecret,
           decrypted_server_share: decryptedServerShare,
         },
       });
@@ -70,7 +75,7 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -80,7 +85,7 @@ export async function PUT(
 
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({
-      // @ts-expect-error
+      // @ts-expect-error - cookies function signature mismatch with Next.js 15
       cookies: () => cookieStore,
     });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -124,15 +129,17 @@ export async function PUT(
     // Update only metadata (no secret content editing allowed with Shamir's)
     const { error: updateError } = await supabase
       .from("secrets")
-      .update({
-        title,
-        recipient_name,
-        recipient_email: contact_method !== "phone" ? recipient_email : null,
-        recipient_phone: contact_method !== "email" ? recipient_phone : null,
-        contact_method,
-        check_in_days: parseInt(check_in_days),
-        next_check_in: nextCheckIn.toISOString(),
-      } as any)
+      .update(
+        {
+          title,
+          recipient_name,
+          recipient_email: contact_method !== "phone" ? recipient_email : null,
+          recipient_phone: contact_method !== "email" ? recipient_phone : null,
+          contact_method,
+          check_in_days: parseInt(check_in_days),
+          next_check_in: nextCheckIn.toISOString(),
+        } satisfies SecretUpdate,
+      )
       .eq("id", id)
       .eq("user_id", user.id);
 

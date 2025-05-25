@@ -81,7 +81,6 @@ export function NewSecretForm() {
       for (let i = 1; i < shares.length; i++) {
         userManagedShares.push(shares[i].toString("hex"))
       }
-      const userManagedSharesHexJson = JSON.stringify(userManagedShares)
 
       // 3. Encrypt the server's share (shares[0])
       const serverSharePlainHex = shares[0].toString("hex") // Get server share before encryption

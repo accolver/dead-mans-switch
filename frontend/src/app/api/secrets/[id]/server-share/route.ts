@@ -1,19 +1,19 @@
-import { Database } from "@/lib/database.types";
 import { decryptMessage } from "@/lib/encryption";
 import { NEXT_PUBLIC_SUPABASE_URL } from "@/lib/env";
 import { SUPABASE_SERVICE_ROLE_KEY } from "@/lib/server-env";
+import { Database } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const secretId = params.id;
+  const { id } = await params;
   const searchParams = request.nextUrl.searchParams;
   const token = searchParams.get("token");
 
-  if (!secretId) {
+  if (!id) {
     return NextResponse.json({ error: "Secret ID is required" }, {
       status: 400,
     });
@@ -39,7 +39,7 @@ export async function GET(
       .from("recipient_access_tokens")
       .select("*")
       .eq("token", token)
-      .eq("secret_id", secretId)
+      .eq("secret_id", id)
       .single();
 
     if (tokenError || !tokenData) {
@@ -79,7 +79,7 @@ export async function GET(
     const { data: secret, error: secretError } = await supabaseAdmin
       .from("secrets")
       .select("server_share, iv, auth_tag")
-      .eq("id", secretId)
+      .eq("id", id)
       .single();
 
     if (secretError || !secret) {
@@ -116,10 +116,13 @@ export async function GET(
     }
 
     return NextResponse.json({ serverShare: decryptedServerShare });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[ServerShare API Error]:", error);
     return NextResponse.json(
-      { error: "Internal server error: " + error.message },
+      {
+        error: "Internal server error: " +
+          (error instanceof Error ? error.message : String(error)),
+      },
       { status: 500 },
     );
   }

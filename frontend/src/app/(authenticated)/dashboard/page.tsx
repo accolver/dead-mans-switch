@@ -1,7 +1,6 @@
 import { SecretCard } from "@/components/secret-card"
 import { Button } from "@/components/ui/button"
-import type { Database } from "@/lib/database.types"
-import { Secret } from "@/types/secret"
+import { Database, Secret } from "@/types"
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { AlertCircle, PlusCircle } from "lucide-react"
 import { cookies } from "next/headers"
@@ -10,7 +9,7 @@ import Link from "next/link"
 export default async function DashboardPage() {
   const cookieStore = await cookies()
   const supabase = createServerComponentClient<Database>({
-    // @ts-expect-error
+    // @ts-expect-error - Supabase auth helpers expect different cookie format
     cookies: () => cookieStore,
   })
 
@@ -52,7 +51,7 @@ export default async function DashboardPage() {
               <AlertCircle className="text-muted-foreground mx-auto h-12 w-12" />
               <h2 className="mt-4 text-lg font-semibold">No secrets yet</h2>
               <p className="text-muted-foreground mt-2 text-sm">
-                Create your first "dead man's switch".
+                Create your first &quot;dead man&apos;s switch&quot;.
               </p>
               <p className="text-muted-foreground mt-2 text-sm">
                 Your secret will only be revealed to your trusted contact if you

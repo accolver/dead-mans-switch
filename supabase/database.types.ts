@@ -249,19 +249,19 @@ export type Database = {
           user_id: string;
         };
         Insert: {
-          auth_tag: string;
+          auth_tag?: string | null;
           check_in_days?: number;
           contact_method: Database["public"]["Enums"]["contact_method"];
           created_at?: string;
           id?: string;
           is_triggered?: boolean | null;
-          iv: string;
+          iv?: string | null;
           last_check_in?: string | null;
           next_check_in?: string | null;
           recipient_email?: string | null;
           recipient_name: string;
           recipient_phone?: string | null;
-          server_share: string;
+          server_share?: string | null;
           sss_shares_total?: number;
           sss_threshold?: number;
           status?: Database["public"]["Enums"]["secret_status"];
@@ -271,19 +271,19 @@ export type Database = {
           user_id: string;
         };
         Update: {
-          auth_tag?: string;
+          auth_tag?: string | null;
           check_in_days?: number;
           contact_method?: Database["public"]["Enums"]["contact_method"];
           created_at?: string;
           id?: string;
           is_triggered?: boolean | null;
-          iv?: string;
+          iv?: string | null;
           last_check_in?: string | null;
           next_check_in?: string | null;
           recipient_email?: string | null;
           recipient_name?: string;
           recipient_phone?: string | null;
-          server_share?: string;
+          server_share?: string | null;
           sss_shares_total?: number;
           sss_threshold?: number;
           status?: Database["public"]["Enums"]["secret_status"];
@@ -476,8 +476,7 @@ export type CompositeTypes<
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database;
-  }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]][
+  } ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]][
       "CompositeTypes"
     ]
     : never = never,

@@ -1,19 +1,18 @@
 "use client"
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Buffer } from "buffer"
+import {
+  Copy,
+  PlusCircle,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react"
 import { useState } from "react"
 import sss from "shamirs-secret-sharing"
-import { Buffer } from "buffer"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Input } from "@/components/ui/input" // For potential single share input if needed
-import {
-  PlusCircle,
-  Trash2,
-  ShieldCheck,
-  ShieldAlert,
-  Copy,
-} from "lucide-react"
 
 type SssDecryptorProps = {
   initialShares?: string[]
@@ -92,7 +91,7 @@ export function SssDecryptor({ initialShares = [] }: SssDecryptorProps) {
 
       const recovered = sss.combine(shareBuffers)
       setRecoveredSecret(recovered.toString("utf8"))
-    } catch (e: any) {
+    } catch (e) {
       console.error("Error combining shares:", e)
       setError(
         `Failed to recover secret: ${e.message || "Invalid shares or threshold not met."}. Ensure shares are correct, in hexadecimal format, and you have enough of them.`,

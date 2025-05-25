@@ -1,13 +1,12 @@
-import { Database } from "@/lib/database.types";
 import { decryptMessage } from "@/lib/encryption";
-import { Secret } from "@/types/secret";
+import { Database, Secret } from "@/types";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(
   _req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -17,7 +16,7 @@ export async function POST(
 
     const cookieStore = await cookies();
     const supabase = createRouteHandlerClient<Database>({
-      // @ts-expect-error
+      // @ts-expect-error - Supabase auth helpers expect different cookie format
       cookies: () => cookieStore,
     });
     const { data: { user }, error: authError } = await supabase.auth.getUser();

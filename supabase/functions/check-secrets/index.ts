@@ -1,8 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { Secret } from "../../types.ts";
 import { decrypt } from "../_shared/crypto.ts";
 import { getSecretTriggerTemplate } from "../_shared/email-templates.ts";
 import { API_URL, SERVICE_ROLE_KEY } from "../_shared/env.ts";
-import { Database, Secret } from "../_shared/types.ts";
+import { Database } from "../../database.types.ts";
 
 interface ProcessError extends Error {
   message: string;
@@ -39,9 +40,17 @@ async function processSecret(
       throw new Error("User email not found");
     }
 
+    if (!secret.server_share) {
+      throw new Error("Secret server share not found");
+    }
+
+    if (!secret.iv || !secret.auth_tag) {
+      throw new Error("Secret IV or auth tag not found");
+    }
+
     // Decrypt the secret message
     const decryptedMessage = await decrypt(
-      secret.message,
+      secret.server_share,
       secret.iv,
       secret.auth_tag,
     );
@@ -87,7 +96,7 @@ async function processSecret(
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (_req) => {
   try {
     const supabaseAdmin = createClient<Database>(
       API_URL,
