@@ -7,8 +7,8 @@ export const secretFormSchema = z.object({
   recipient_email: z.string().email().optional(),
   recipient_phone: z.string().optional(),
   contact_method: z.enum(["email", "phone", "both"]),
-  check_in_days: z.string().refine((val) => parseInt(val, 10) >= 7, {
-    message: "Check-in frequency must be at least 7 days.",
+  check_in_days: z.string().refine((val) => parseInt(val, 10) >= 2, {
+    message: "Check-in frequency must be at least 2 days.",
   }),
   sss_shares_total: z
     .number({

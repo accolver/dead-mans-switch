@@ -316,7 +316,7 @@ export function NewSecretForm() {
                   <Input
                     type="number"
                     {...field}
-                    min="7"
+                    min="2"
                     disabled={isSubmitting}
                   />
                 </FormControl>
