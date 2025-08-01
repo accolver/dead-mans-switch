@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/utils/supabase/client"
-import { User } from "@supabase/supabase-js"
 import { useEffect, useState } from "react"
 
 interface StripeCheckoutButtonProps {
@@ -17,30 +16,17 @@ export function StripeCheckoutButton({
   disabled,
 }: StripeCheckoutButtonProps) {
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const [userLoading, setUserLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
     async function getUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-      setUserLoading(false)
+      await supabase.auth.getUser()
+      // User state is not used in current implementation but kept for future use
     }
     getUser()
   }, [supabase.auth])
 
   const handleCheckout = async () => {
-    // If user is not authenticated, redirect to signup with return URL
-    if (!user) {
-      const returnUrl = `${window.location.origin}/api/create-checkout-session?lookup_key=${lookupKey}&redirect_after_auth=true`
-      const signupUrl = `/auth/signup?next=${encodeURIComponent(returnUrl)}`
-      window.location.href = signupUrl
-      return
-    }
-
     setLoading(true)
 
     try {
@@ -60,8 +46,8 @@ export function StripeCheckoutButton({
         const loginUrl = `/auth/login?next=${encodeURIComponent(returnUrl)}`
         window.location.href = loginUrl
       } else {
-        const errorData = await response.json()
-        console.error("Checkout failed:", errorData.error || "Unknown error")
+        await response.json()
+        console.error("Checkout failed")
         // You could show a toast notification here
       }
     } catch (error) {
@@ -70,15 +56,6 @@ export function StripeCheckoutButton({
     } finally {
       setLoading(false)
     }
-  }
-
-  // Show loading state while checking authentication
-  if (userLoading) {
-    return (
-      <Button disabled className="w-full">
-        Loading...
-      </Button>
-    )
   }
 
   return (

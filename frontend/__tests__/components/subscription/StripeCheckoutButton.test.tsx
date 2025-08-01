@@ -126,6 +126,7 @@ describe("StripeCheckoutButton", () => {
     mockFetch.mockResolvedValueOnce({
       redirected: false,
       status: 400,
+      json: () => Promise.resolve({ error: "Bad request" }),
     })
 
     render(

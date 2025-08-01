@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const { message } = await request.json();
 
-    if (!message) {
+    if (!message || message === "") {
       return NextResponse.json(
         { error: "Missing message to encrypt" },
         { status: 400 },
