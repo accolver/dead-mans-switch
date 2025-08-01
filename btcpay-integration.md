@@ -9,6 +9,7 @@ Based on the [BTCPay Server Development Documentation](https://docs.btcpayserver
 ## BTCPay Server Architecture
 
 BTCPay Server consists of several components:
+
 - **BTCPay Server**: Main application for payment processing
 - **NBXplorer**: Lightweight block explorer for tracking payments
 - **Bitcoin Core**: Full Bitcoin node
@@ -764,6 +765,7 @@ Choose a deployment method from the [BTCPay Server documentation](https://docs.b
 ### 4. Setup Lightning (Optional)
 
 For instant payments, configure Lightning Network:
+
 1. Go to Lightning → Settings
 2. Connect to Core Lightning (CLN) or LND
 3. Open channels for liquidity

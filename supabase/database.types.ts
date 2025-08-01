@@ -140,6 +140,30 @@ export type Database = {
           },
         ]
       }
+      cron_config: {
+        Row: {
+          created_at: string
+          id: number
+          project_url: string
+          service_role_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          project_url?: string
+          service_role_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          project_url?: string
+          service_role_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       recipient_access_tokens: {
         Row: {
           created_at: string
@@ -451,6 +475,13 @@ export type Database = {
       create_check_in_token: {
         Args: { p_secret_id: string; p_expires_in?: unknown }
         Returns: string
+      }
+      get_cron_config: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          base_url: string
+          auth_header: string
+        }[]
       }
       get_user_tier: {
         Args: { p_user_id: string }
