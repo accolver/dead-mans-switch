@@ -1,81 +1,119 @@
-import { supabase } from "./supabase";
+import { getTierConfig } from "../constants/tiers";
 import {
   SubscriptionStatus,
   SubscriptionTier,
   TierLimits,
   UserTierInfo,
 } from "../types/subscription";
-import { getTierConfig } from "../constants/tiers";
+import { supabase } from "./supabase";
 
 // Get current user's tier information with usage and limits
 export async function getUserTierInfo(
   userId: string,
 ): Promise<UserTierInfo | null> {
-  // Get user tier with subscription and usage data
-  const { data: tier, error: tierError } = await supabase
-    .from("user_tiers")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+  try {
+    // Get user tier with subscription and usage data
+    const { data: tier, error: tierError } = await supabase
+      .from("user_tiers")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-  if (tierError) {
-    console.error("Error fetching user tier:", tierError);
-    return null;
-  }
+    let userTier = tier;
 
-  // Get subscription data if exists
-  const { data: subscription } = await supabase
-    .from("user_subscriptions")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+    // If no tier exists, create a default free tier
+    if (!tier && !tierError) {
+      console.log("No tier found for user, creating default free tier");
+      const freeConfig = getTierConfig("free");
 
-  // Get usage data
-  const { data: usage } = await supabase
-    .from("subscription_usage")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+      const { data: newTier, error: createError } = await supabase
+        .from("user_tiers")
+        .insert({
+          user_id: userId,
+          tier_name: "free",
+          max_secrets: freeConfig.maxSecrets,
+          max_recipients_per_secret: freeConfig.maxRecipientsPerSecret,
+          custom_intervals: freeConfig.customIntervals,
+        })
+        .select()
+        .single();
 
-  if (!usage) {
-    // Calculate usage if not exists
-    await calculateUserUsage(userId);
-    const { data: newUsage } = await supabase
+      if (createError) {
+        console.error("Error creating default tier:", createError);
+        return null;
+      }
+
+      userTier = newTier;
+    } else if (tierError) {
+      console.error("Error fetching user tier:", tierError);
+      return null;
+    }
+
+    if (!userTier) {
+      console.error("No tier available for user");
+      return null;
+    }
+
+    // Get subscription data if exists
+    const { data: subscription } = await supabase
+      .from("user_subscriptions")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // Get usage data
+    const { data: usage } = await supabase
       .from("subscription_usage")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
-    if (!newUsage) {
-      console.error("Failed to calculate user usage");
-      return null;
+    let finalUsage = usage;
+
+    if (!usage) {
+      // Calculate usage if not exists
+      await calculateUserUsage(userId);
+      const { data: newUsage } = await supabase
+        .from("subscription_usage")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!newUsage) {
+        console.error("Failed to calculate user usage");
+        // Create a default usage record
+        finalUsage = {
+          id: crypto.randomUUID(),
+          user_id: userId,
+          secrets_count: 0,
+          total_recipients: 0,
+          last_calculated: new Date().toISOString(),
+        };
+      } else {
+        finalUsage = newUsage;
+      }
     }
+
+    return {
+      tier: userTier,
+      subscription: subscription || undefined,
+      usage: finalUsage!,
+      limits: {
+        secrets: {
+          current: finalUsage!.secrets_count,
+          max: userTier.max_secrets,
+          canCreate: finalUsage!.secrets_count < userTier.max_secrets,
+        },
+        recipients: {
+          current: finalUsage!.total_recipients,
+          max: userTier.max_recipients_per_secret,
+        },
+      },
+    };
+  } catch (error) {
+    console.error("Error in getUserTierInfo:", error);
+    return null;
   }
-
-  const finalUsage = usage || {
-    id: crypto.randomUUID(),
-    user_id: userId,
-    secrets_count: 0,
-    total_recipients: 0,
-    last_calculated: new Date().toISOString(),
-  };
-
-  return {
-    tier,
-    subscription: subscription || undefined,
-    usage: finalUsage,
-    limits: {
-      secrets: {
-        current: finalUsage.secrets_count,
-        max: tier.max_secrets,
-        canCreate: finalUsage.secrets_count < tier.max_secrets,
-      },
-      recipients: {
-        current: finalUsage.total_recipients,
-        max: tier.max_recipients_per_secret,
-      },
-    },
-  };
 }
 
 // Check if user can create a new secret

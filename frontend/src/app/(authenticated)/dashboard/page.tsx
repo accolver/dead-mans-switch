@@ -66,7 +66,7 @@ export default async function DashboardPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Your Secrets</h1>
-        <Button asChild>
+        <Button asChild variant="outline">
           <Link href="/secrets/new">Create New Secret</Link>
         </Button>
       </div>

@@ -69,9 +69,6 @@ async function createCheckoutSession(lookupKey: string) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
       // If column doesn't exist or other error, create new customer
-      console.log(
-        "Creating new Stripe customer (Stripe columns may not exist yet)",
-      );
       customerId = await fiatPaymentProvider.createCustomer(user.email!, {
         user_id: user.id,
       });
@@ -91,7 +88,7 @@ async function createCheckoutSession(lookupKey: string) {
       priceId: price.id,
       mode: "subscription",
       successUrl:
-        `${NEXT_PUBLIC_SITE_URL}/pricing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        `${NEXT_PUBLIC_SITE_URL}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${NEXT_PUBLIC_SITE_URL}/pricing?canceled=true`,
       billingAddressCollection: "auto",
       metadata: {

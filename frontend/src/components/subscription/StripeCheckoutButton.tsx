@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/utils/supabase/client"
+import { User } from "@supabase/supabase-js"
 import { useEffect, useState } from "react"
 
 interface StripeCheckoutButtonProps {
@@ -16,12 +17,17 @@ export function StripeCheckoutButton({
   disabled,
 }: StripeCheckoutButtonProps) {
   const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
     async function getUser() {
-      await supabase.auth.getUser()
-      // User state is not used in current implementation but kept for future use
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUser(user)
+      setCheckingAuth(false)
     }
     getUser()
   }, [supabase.auth])
@@ -30,6 +36,14 @@ export function StripeCheckoutButton({
     setLoading(true)
 
     try {
+      // If user is not authenticated, redirect to login with return URL
+      if (!user) {
+        const returnUrl = `${window.location.origin}/api/create-checkout-session?lookup_key=${lookupKey}&redirect_after_auth=true`
+        const loginUrl = `/auth/login?next=${encodeURIComponent(returnUrl)}`
+        window.location.href = loginUrl
+        return
+      }
+
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: {
@@ -56,6 +70,15 @@ export function StripeCheckoutButton({
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading while checking authentication
+  if (checkingAuth) {
+    return (
+      <Button disabled className="w-full">
+        Loading...
+      </Button>
+    )
   }
 
   return (

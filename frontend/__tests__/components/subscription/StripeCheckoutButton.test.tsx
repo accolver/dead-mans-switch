@@ -10,33 +10,61 @@ const mockFetch = global.fetch as any
 delete (window as any).location
 window.location = { href: "" } as any
 
+// Mock Supabase client
+const mockGetUser = vi.fn()
+vi.mock("@/utils/supabase/client", () => ({
+  createClient: () => ({
+    auth: {
+      getUser: mockGetUser,
+    },
+  }),
+}))
+
 describe("StripeCheckoutButton", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     window.location.href = ""
+    // Default to authenticated user
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: "test-user-id", email: "test@example.com" } },
+      error: null,
+    })
   })
 
-  it("should render button with children text", () => {
+  it("should render button with children text after auth check", async () => {
     render(
       <StripeCheckoutButton lookupKey="pro_monthly">
         Subscribe to Pro
       </StripeCheckoutButton>,
     )
 
-    expect(screen.getByRole("button")).toHaveTextContent("Subscribe to Pro")
+    // Initially shows loading while checking auth
+    expect(screen.getByRole("button")).toHaveTextContent("Loading...")
+    expect(screen.getByRole("button")).toBeDisabled()
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).toHaveTextContent("Subscribe to Pro")
+      expect(screen.getByRole("button")).not.toBeDisabled()
+    })
   })
 
-  it("should be disabled when disabled prop is true", () => {
+  it("should be disabled when disabled prop is true", async () => {
     render(
       <StripeCheckoutButton lookupKey="pro_monthly" disabled>
         Subscribe to Pro
       </StripeCheckoutButton>,
     )
 
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
+
     expect(screen.getByRole("button")).toBeDisabled()
   })
 
-  it("should call checkout API on button click", async () => {
+  it("should call checkout API on button click for authenticated user", async () => {
     mockFetch.mockResolvedValueOnce({
       redirected: true,
       url: "https://checkout.stripe.com/session/cs_123",
@@ -47,6 +75,11 @@ describe("StripeCheckoutButton", () => {
         Subscribe to Pro
       </StripeCheckoutButton>,
     )
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
 
     const button = screen.getByRole("button")
     fireEvent.click(button)
@@ -59,6 +92,35 @@ describe("StripeCheckoutButton", () => {
         },
         body: JSON.stringify({ lookup_key: "pro_monthly" }),
       })
+    })
+  })
+
+  it("should redirect to login for unauthenticated user", async () => {
+    // Mock unauthenticated user
+    mockGetUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    })
+
+    render(
+      <StripeCheckoutButton lookupKey="pro_monthly">
+        Subscribe to Pro
+      </StripeCheckoutButton>,
+    )
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
+
+    const button = screen.getByRole("button")
+    fireEvent.click(button)
+
+    // Should redirect to login with next parameter
+    await waitFor(() => {
+      expect(window.location.href).toContain("/auth/login")
+      expect(window.location.href).toContain("next=")
+      expect(window.location.href).toContain("create-checkout-session")
     })
   })
 
@@ -75,6 +137,11 @@ describe("StripeCheckoutButton", () => {
         Subscribe to Pro
       </StripeCheckoutButton>,
     )
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
 
     const button = screen.getByRole("button")
     fireEvent.click(button)
@@ -110,6 +177,11 @@ describe("StripeCheckoutButton", () => {
       </StripeCheckoutButton>,
     )
 
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
+
     const button = screen.getByRole("button")
     fireEvent.click(button)
 
@@ -135,6 +207,11 @@ describe("StripeCheckoutButton", () => {
       </StripeCheckoutButton>,
     )
 
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
+
     const button = screen.getByRole("button")
     fireEvent.click(button)
 
@@ -156,6 +233,11 @@ describe("StripeCheckoutButton", () => {
         Subscribe to Pro
       </StripeCheckoutButton>,
     )
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
 
     const button = screen.getByRole("button")
     fireEvent.click(button)
@@ -185,6 +267,11 @@ describe("StripeCheckoutButton", () => {
       </StripeCheckoutButton>,
     )
 
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
+
     const button = screen.getByRole("button")
     fireEvent.click(button)
 
@@ -199,23 +286,33 @@ describe("StripeCheckoutButton", () => {
     })
   })
 
-  it("should have correct CSS classes applied", () => {
+  it("should have correct CSS classes applied", async () => {
     render(
       <StripeCheckoutButton lookupKey="pro_monthly">
         Subscribe to Pro
       </StripeCheckoutButton>,
     )
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
 
     const button = screen.getByRole("button")
     expect(button).toHaveClass("w-full")
   })
 
-  it("should be accessible", () => {
+  it("should be accessible", async () => {
     render(
       <StripeCheckoutButton lookupKey="pro_monthly">
         Subscribe to Pro
       </StripeCheckoutButton>,
     )
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.getByRole("button")).not.toHaveTextContent("Loading...")
+    })
 
     const button = screen.getByRole("button")
     expect(button).toBeInTheDocument()

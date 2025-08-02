@@ -29,6 +29,8 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
   const [user, setUser] = useState<User | null>(propUser ?? null)
   const [loading, setLoading] = useState(propUser === undefined)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isProUser, setIsProUser] = useState(false)
+  const [checkingSubscription, setCheckingSubscription] = useState(false)
 
   useEffect(() => {
     // If user prop is provided, use it (for testing)
@@ -59,6 +61,35 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
 
     return () => subscription.unsubscribe()
   }, [propUser])
+
+  // Check subscription status when user changes
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      if (!user) {
+        setIsProUser(false)
+        return
+      }
+
+      setCheckingSubscription(true)
+      try {
+        const { data: tier } = await supabase
+          .from("user_tiers")
+          .select("tier_name")
+          .eq("user_id", user.id)
+          .maybeSingle()
+
+        // If no tier exists, assume free tier
+        setIsProUser(tier?.tier_name === "pro")
+      } catch (error) {
+        console.error("Error checking subscription status:", error)
+        setIsProUser(false)
+      } finally {
+        setCheckingSubscription(false)
+      }
+    }
+
+    checkSubscriptionStatus()
+  }, [user])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -96,11 +127,16 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
               // Show nothing while loading to avoid flash
               <div className="h-9 w-20" />
             ) : user ? (
-              // User is logged in - show user email and sign out
+              // User is logged in - show user email, upgrade button if not pro, and sign out
               <>
                 <span className="text-muted-foreground text-sm">
                   {user.email}
                 </span>
+                {!checkingSubscription && !isProUser && (
+                  <Button asChild>
+                    <Link href="/pricing">Upgrade to Pro</Link>
+                  </Button>
+                )}
                 <Button variant="outline" onClick={handleSignOut}>
                   Sign Out
                 </Button>
@@ -181,12 +217,21 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
                     // Show nothing while loading to avoid flash
                     <div className="h-9" />
                   ) : user ? (
-                    // User is logged in - show user email and sign out
+                    // User is logged in - show user email, upgrade button if not pro, and sign out
                     <>
                       <Separator className="my-1" />
                       <div className="text-muted-foreground bg-muted/50 rounded-md border px-3 py-3 text-sm">
                         {user.email}
                       </div>
+                      {!checkingSubscription && !isProUser && (
+                        <Button
+                          asChild
+                          className="h-12 justify-start"
+                          onClick={handleMobileMenuItemClick}
+                        >
+                          <Link href="/pricing">Upgrade to Pro</Link>
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         onClick={handleSignOut}
