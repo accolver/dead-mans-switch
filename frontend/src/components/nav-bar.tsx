@@ -74,12 +74,17 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
       try {
         const { data: tier } = await supabase
           .from("user_tiers")
-          .select("tier_name")
+          .select(
+            `
+            tier_id,
+            tiers!inner(name)
+          `,
+          )
           .eq("user_id", user.id)
           .maybeSingle()
 
         // If no tier exists, assume free tier
-        setIsProUser(tier?.tier_name === "pro")
+        setIsProUser(tier?.tiers?.name === "pro")
       } catch (error) {
         console.error("Error checking subscription status:", error)
         setIsProUser(false)
