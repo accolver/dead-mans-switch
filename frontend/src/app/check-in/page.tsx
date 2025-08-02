@@ -16,11 +16,11 @@ function CheckInContent() {
   if (!token) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-md text-center">
-          <h1 className="mb-4 text-2xl font-bold text-red-600">
+        <div className="mx-auto max-w-md pt-16 text-center">
+          <h1 className="text-destructive mb-4 text-2xl font-bold">
             Invalid Check-In Link
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             This check-in link is missing required information.
           </p>
         </div>
@@ -41,20 +41,23 @@ function CheckInContent() {
         },
       )
 
+      const data = await response.json()
+
       if (response.ok) {
         toast({
-          title: "Check-in successful! ✅",
-          description: "Your secret timer has been reset.",
+          title: "Check-in successful!",
+          description: `Your secret "${data.secretTitle}" timer has been reset. Next check-in: ${data.nextCheckIn}`,
         })
       } else {
-        throw new Error("Check-in failed")
+        throw new Error(data.error || "Check-in failed")
       }
     } catch (error) {
       console.error("Check-in error:", error)
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred"
       toast({
-        title: "Check-in failed ❌",
-        description:
-          "There was an error processing your check-in. Please try again.",
+        title: "Check-in failed",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -64,10 +67,10 @@ function CheckInContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mx-auto max-w-md space-y-6 text-center">
+      <div className="mx-auto max-w-md space-y-6 pt-32 text-center">
         <h1 className="text-3xl font-bold">Secret Check-In</h1>
 
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Click the button below to check in and reset your secret's timer.
         </p>
 
@@ -80,7 +83,7 @@ function CheckInContent() {
           {isLoading ? "Checking in..." : "Check In Now"}
         </Button>
 
-        <p className="text-sm text-gray-500">
+        <p className="text-muted-foreground text-sm">
           This will update your last check-in time and prevent your secret from
           being triggered.
         </p>
