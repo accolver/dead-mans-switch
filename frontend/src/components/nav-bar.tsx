@@ -15,7 +15,7 @@ import { createClient } from "@/utils/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { Menu } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 const supabase = createClient()
@@ -26,6 +26,7 @@ interface NavBarProps {
 
 export function NavBar({ user: propUser }: NavBarProps = {}) {
   const router = useRouter()
+  const pathname = usePathname()
   const [user, setUser] = useState<User | null>(propUser ?? null)
   const [loading, setLoading] = useState(propUser === undefined)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -112,9 +113,20 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href={user ? "/dashboard" : "/"} className="text-xl font-bold">
-            {NEXT_PUBLIC_COMPANY}
-          </Link>
+          <div className="flex items-center space-x-4">
+            <Link
+              href={user ? "/dashboard" : "/"}
+              className="text-xl font-bold"
+            >
+              {NEXT_PUBLIC_COMPANY}
+            </Link>
+            {/* Dashboard link when authenticated user is on home page */}
+            {user && pathname === "/" && (
+              <Button variant="ghost" asChild>
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+            )}
+          </div>
 
           {/* Desktop Menu */}
           <div className="hidden items-center space-x-4 md:flex">
@@ -132,11 +144,8 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
               // Show nothing while loading to avoid flash
               <div className="h-9 w-20" />
             ) : user ? (
-              // User is logged in - show user email, upgrade button if not pro, and sign out
+              // User is logged in - show upgrade button if not pro, and sign out
               <>
-                <span className="text-muted-foreground text-sm">
-                  {user.email}
-                </span>
                 {!checkingSubscription && !isProUser && (
                   <Button asChild>
                     <Link href="/pricing">Upgrade to Pro</Link>
@@ -207,6 +216,26 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
                     </>
                   )}
 
+                  {/* Dashboard link when authenticated user is on home page */}
+                  {user && pathname === "/" && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="h-12 justify-start"
+                        data-testid="mobile-dashboard"
+                      >
+                        <Link
+                          href="/dashboard"
+                          onClick={handleMobileMenuItemClick}
+                        >
+                          Dashboard
+                        </Link>
+                      </Button>
+                      <Separator className="my-1" />
+                    </>
+                  )}
+
                   <Button
                     variant="ghost"
                     asChild
@@ -222,12 +251,9 @@ export function NavBar({ user: propUser }: NavBarProps = {}) {
                     // Show nothing while loading to avoid flash
                     <div className="h-9" />
                   ) : user ? (
-                    // User is logged in - show user email, upgrade button if not pro, and sign out
+                    // User is logged in - show upgrade button if not pro, and sign out
                     <>
                       <Separator className="my-1" />
-                      <div className="text-muted-foreground bg-muted/50 rounded-md border px-3 py-3 text-sm">
-                        {user.email}
-                      </div>
                       {!checkingSubscription && !isProUser && (
                         <Button
                           asChild
