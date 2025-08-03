@@ -191,6 +191,10 @@ export class StripeProvider implements PaymentProvider {
         config.billingAddressCollection;
     }
 
+    if (config.automaticTax) {
+      sessionParams.automatic_tax = config.automaticTax;
+    }
+
     if (config.metadata) {
       sessionParams.metadata = config.metadata;
     }

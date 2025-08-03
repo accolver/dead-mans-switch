@@ -125,6 +125,7 @@ export interface CheckoutConfig {
   cancelUrl: string;
   mode: "subscription" | "payment";
   billingAddressCollection?: "auto" | "required";
+  automaticTax?: { enabled: boolean };
   expiresInMinutes?: number; // For crypto payments
   metadata?: Record<string, string>;
 }
