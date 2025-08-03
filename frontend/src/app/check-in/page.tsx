@@ -15,7 +15,7 @@ function CheckInContent() {
 
   if (!token) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto sm:px-4 py-8">
         <div className="mx-auto max-w-md pt-16 text-center">
           <h1 className="text-destructive mb-4 text-2xl font-bold">
             Invalid Check-In Link
@@ -66,7 +66,7 @@ function CheckInContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto sm:px-4 py-8">
       <div className="mx-auto max-w-md space-y-6 pt-32 text-center">
         <h1 className="text-3xl font-bold">Secret Check-In</h1>
 
