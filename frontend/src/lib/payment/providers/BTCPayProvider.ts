@@ -33,7 +33,7 @@ export interface BTCPayInvoice {
     createdTime: string;
     expirationTime: string;
     monitoringExpiration?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface BTCPayWebhookEventRaw {
@@ -71,9 +71,12 @@ export class BTCPayProvider implements PaymentProvider {
 
     // Customer Management - BTCPay has no native customers; simulate via metadata
     async createCustomer(
-        email: string,
-        metadata?: Record<string, string>,
+        _email: string,
+        _metadata?: Record<string, string>,
     ): Promise<string> {
+        // BTCPay doesn't have native customers; we simulate via metadata
+        void _email; // Explicitly ignore unused parameter
+        void _metadata; // Explicitly ignore unused parameter
         const customerId = `btcpay_${Date.now()}_${
             Math.random().toString(36).slice(2, 10)
         }`;
@@ -133,6 +136,7 @@ export class BTCPayProvider implements PaymentProvider {
     }
 
     async getSubscription(_subscriptionId: string): Promise<Subscription> {
+        void _subscriptionId; // Explicitly ignore unused parameter
         throw new Error("Subscription retrieval not implemented for BTCPay");
     }
 
@@ -140,10 +144,13 @@ export class BTCPayProvider implements PaymentProvider {
         _subscriptionId: string,
         _data: SubscriptionUpdate,
     ): Promise<Subscription> {
+        void _subscriptionId; // Explicitly ignore unused parameter
+        void _data; // Explicitly ignore unused parameter
         throw new Error("Subscription update not implemented for BTCPay");
     }
 
     async cancelSubscription(_subscriptionId: string): Promise<Subscription> {
+        void _subscriptionId; // Explicitly ignore unused parameter
         throw new Error("Subscription cancellation not implemented for BTCPay");
     }
 
@@ -205,6 +212,8 @@ export class BTCPayProvider implements PaymentProvider {
         _customerId: string,
         _returnUrl: string,
     ): Promise<BillingPortalSession> {
+        void _customerId; // Explicitly ignore unused parameter
+        void _returnUrl; // Explicitly ignore unused parameter
         throw new Error(
             "BTCPay Server does not support billing portal sessions",
         );
@@ -241,6 +250,7 @@ export class BTCPayProvider implements PaymentProvider {
     }
 
     async listPrices(_productId?: string): Promise<Price[]> {
+        void _productId; // Explicitly ignore unused parameter
         return [
             {
                 id: "pro_btc_monthly",
