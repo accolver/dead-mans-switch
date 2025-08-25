@@ -278,26 +278,103 @@ export class BTCPayProvider implements PaymentProvider {
         fromCurrency: string,
     ): Promise<number> {
         if (fromCurrency === "BTC") return amount;
-        const response = await fetch(
+
+        try {
+            // Try BTCPay Server rates first
+            const btcRate = await this.getBTCPayRate(fromCurrency);
+            if (btcRate) {
+                return amount / btcRate;
+            }
+        } catch (error) {
+            // BTCPay rates unavailable, will try fallback
+        }
+
+        // Fallback to external rate API
+        try {
+            const fallbackRate = await this.getFallbackRate(fromCurrency);
+            return amount / fallbackRate;
+        } catch (error) {
+            throw new Error(
+                `Failed to get exchange rate for ${fromCurrency}: ${error}`,
+            );
+        }
+    }
+
+    private async getBTCPayRate(currency: string): Promise<number | null> {
+        // Try multiple rate endpoints as different BTCPay versions use different paths
+        const endpoints = [
             `${this.baseUrl}/stores/${this.config.storeId}/rates`,
+            `${this.baseUrl}/rates`,
+            `${this.baseUrl}/api/rates`,
+            `${this.baseUrl}/stores/${this.config.storeId}/rates/${currency}`,
+        ];
+
+        for (const endpoint of endpoints) {
+            try {
+                const response = await fetch(endpoint, {
+                    headers: {
+                        Authorization: `token ${this.config.apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                if (!response.ok) {
+                    continue;
+                }
+
+                const data = await response.json();
+
+                // Handle different response formats
+                let rates: Array<{ code: string; rate: number }> = [];
+
+                if (Array.isArray(data)) {
+                    rates = data;
+                } else if (data.rates && Array.isArray(data.rates)) {
+                    rates = data.rates;
+                } else if (data[currency]) {
+                    // Single currency response
+                    return data[currency];
+                }
+
+                if (rates && rates.length > 0) {
+                    const btcRate = rates.find((r) => r.code === currency)
+                        ?.rate;
+                    if (btcRate) {
+                        return btcRate;
+                    }
+                }
+            } catch (error) {
+                continue;
+            }
+        }
+
+        // BTCPay rates unavailable, will fall back to external API
+        return null;
+    }
+
+    private async getFallbackRate(currency: string): Promise<number> {
+        // Use CoinGecko API as fallback
+        const response = await fetch(
+            `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=${currency.toLowerCase()}`,
             {
                 headers: {
-                    Authorization: `token ${this.config.apiKey}`,
-                    "Content-Type": "application/json",
+                    "Accept": "application/json",
                 },
             },
         );
+
         if (!response.ok) {
-            throw new Error("Failed to fetch exchange rates");
+            throw new Error(`CoinGecko API error: ${response.status}`);
         }
-        const rates = (await response.json()) as Array<
-            { code: string; rate: number }
-        >;
-        const btcRate = rates.find((r) => r.code === fromCurrency)?.rate;
-        if (!btcRate) {
-            throw new Error(`Exchange rate not found for ${fromCurrency}`);
+
+        const data = await response.json();
+        const rate = data.bitcoin?.[currency.toLowerCase()];
+
+        if (!rate) {
+            throw new Error(`Rate not found for ${currency}`);
         }
-        return amount / btcRate;
+
+        return rate;
     }
 
     // Private helpers
@@ -309,46 +386,99 @@ export class BTCPayProvider implements PaymentProvider {
         redirectUrl?: string;
         metadata?: Record<string, unknown>;
     }): Promise<BTCPayInvoice> {
-        const response = await fetch(
-            `${this.baseUrl}/stores/${this.config.storeId}/invoices`,
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `token ${this.config.apiKey}`,
-                    "Content-Type": "application/json",
+        try {
+            const requestBody = {
+                amount: params.amount.toString(),
+                currency: params.currency,
+                metadata: params.metadata || {},
+                checkout: {
+                    expirationMinutes: params.expiresInMinutes || 60,
+                    redirectURL: params.redirectUrl,
                 },
-                body: JSON.stringify({
-                    amount: params.amount.toString(),
-                    currency: params.currency,
-                    metadata: params.metadata || {},
-                    checkout: {
-                        expirationMinutes: params.expiresInMinutes || 60,
-                        redirectURL: params.redirectUrl,
+            };
+
+            const response = await fetch(
+                `${this.baseUrl}/stores/${this.config.storeId}/invoices`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `token ${this.config.apiKey}`,
+                        "Content-Type": "application/json",
                     },
-                }),
-            },
-        );
-        if (!response.ok) {
-            const error = await response.text();
-            throw new Error(`Failed to create BTCPay invoice: ${error}`);
+                    body: JSON.stringify(requestBody),
+                },
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage =
+                    `BTCPay invoice creation failed (${response.status})`;
+
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorMessage;
+                } catch {
+                    errorMessage = `${errorMessage}: ${errorText}`;
+                }
+
+                console.error("BTCPay invoice creation error:", {
+                    status: response.status,
+                    error: errorText,
+                });
+
+                throw new Error(errorMessage);
+            }
+
+            const invoice = await response.json();
+            return invoice as BTCPayInvoice;
+        } catch (error) {
+            console.error("BTCPay invoice creation failed:", error);
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error(`Unknown error creating BTCPay invoice: ${error}`);
         }
-        return (await response.json()) as BTCPayInvoice;
     }
 
     private async getInvoice(invoiceId: string): Promise<BTCPayInvoice> {
-        const response = await fetch(
-            `${this.baseUrl}/stores/${this.config.storeId}/invoices/${invoiceId}`,
-            {
-                headers: {
-                    Authorization: `token ${this.config.apiKey}`,
-                    "Content-Type": "application/json",
+        try {
+            const response = await fetch(
+                `${this.baseUrl}/stores/${this.config.storeId}/invoices/${invoiceId}`,
+                {
+                    headers: {
+                        Authorization: `token ${this.config.apiKey}`,
+                        "Content-Type": "application/json",
+                    },
                 },
-            },
-        );
-        if (!response.ok) {
-            throw new Error("Failed to fetch BTCPay invoice");
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+
+                if (response.status === 404) {
+                    throw new Error(`BTCPay invoice not found: ${invoiceId}`);
+                }
+
+                console.error("BTCPay invoice fetch error:", {
+                    status: response.status,
+                    invoiceId,
+                    error: errorText,
+                });
+
+                throw new Error(
+                    `Failed to fetch BTCPay invoice (${response.status}): ${errorText}`,
+                );
+            }
+
+            const invoice = await response.json();
+            return invoice as BTCPayInvoice;
+        } catch (error) {
+            console.error("BTCPay invoice fetch failed:", error);
+            if (error instanceof Error) {
+                throw error;
+            }
+            throw new Error(`Unknown error fetching BTCPay invoice: ${error}`);
         }
-        return (await response.json()) as BTCPayInvoice;
     }
 
     private mapInvoiceToPayment(invoice: BTCPayInvoice): Payment {

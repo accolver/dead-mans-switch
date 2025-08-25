@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Subscription } from "@/lib/payment/interfaces/PaymentProvider"
 import { createClient } from "@/utils/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { Bitcoin } from "lucide-react"
@@ -10,6 +11,7 @@ interface BTCPayCheckoutButtonProps {
   amount: number
   currency?: string
   mode?: "payment" | "subscription"
+  interval?: Subscription["interval"]
   children: React.ReactNode
   disabled?: boolean
 }
@@ -18,6 +20,7 @@ export function BTCPayCheckoutButton({
   amount,
   currency = "USD",
   mode = "payment",
+  interval,
   children,
   disabled,
 }: BTCPayCheckoutButtonProps) {
@@ -48,6 +51,9 @@ export function BTCPayCheckoutButton({
           mode,
           redirect_after_auth: "true",
         })
+        if (interval) {
+          params.set("interval", interval)
+        }
         const returnUrl = `${window.location.origin}/api/create-btcpay-checkout?${params.toString()}`
         const loginUrl = `/auth/login?next=${encodeURIComponent(returnUrl)}`
         window.location.href = loginUrl
@@ -57,7 +63,7 @@ export function BTCPayCheckoutButton({
       const response = await fetch("/api/create-btcpay-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, currency, mode }),
+        body: JSON.stringify({ amount, currency, mode, interval }),
       })
 
       if (response.ok) {
@@ -70,6 +76,9 @@ export function BTCPayCheckoutButton({
           mode,
           redirect_after_auth: "true",
         })
+        if (interval) {
+          params.set("interval", interval)
+        }
         const returnUrl = `${window.location.origin}/api/create-btcpay-checkout?${params.toString()}`
         const loginUrl = `/auth/login?next=${encodeURIComponent(returnUrl)}`
         window.location.href = loginUrl
@@ -99,9 +108,8 @@ export function BTCPayCheckoutButton({
       className="w-full"
       variant="default"
     >
-      <Bitcoin className="w-4 h-4 mr-2" />
+      <Bitcoin className="mr-2 h-4 w-4" />
       {loading ? "Loading..." : children}
     </Button>
   )
 }
-

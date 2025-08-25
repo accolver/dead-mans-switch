@@ -1,5 +1,6 @@
 import { NEXT_PUBLIC_SITE_URL } from "@/lib/env";
 import { getCryptoPaymentProvider } from "@/lib/payment";
+import { Subscription } from "@/lib/payment/interfaces/PaymentProvider";
 import { createClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -10,23 +11,26 @@ export async function GET(request: NextRequest) {
     const mode = (searchParams.get("mode") || "payment") as
         | "payment"
         | "subscription";
+    const interval = searchParams.get("interval") as Subscription["interval"];
     const redirectAfterAuth = searchParams.get("redirect_after_auth");
 
     if (!amount || !redirectAfterAuth) {
         return NextResponse.redirect(`${NEXT_PUBLIC_SITE_URL}/pricing`);
     }
 
-    return createBTCPayCheckoutSession({ amount, currency, mode });
+    return createBTCPayCheckoutSession({ amount, currency, mode, interval });
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const { amount, currency = "BTC", mode = "payment" } = await request
-            .json();
+        const { amount, currency = "BTC", mode = "payment", interval } =
+            await request
+                .json();
         return createBTCPayCheckoutSession({
             amount: Number(amount),
             currency,
             mode,
+            interval,
         });
     } catch (error) {
         console.error("Error parsing request body:", error);
@@ -41,6 +45,7 @@ async function createBTCPayCheckoutSession(
         amount: number;
         currency: string;
         mode: "payment" | "subscription";
+        interval?: Subscription["interval"];
     },
 ) {
     try {
@@ -85,6 +90,7 @@ async function createBTCPayCheckoutSession(
                 user_id: user.id,
                 original_amount: String(params.amount),
                 original_currency: params.currency.toUpperCase(),
+                ...(params.interval && { billing_interval: params.interval }),
             },
         });
 
