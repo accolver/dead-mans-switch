@@ -224,11 +224,31 @@ export class BTCPayProvider implements PaymentProvider {
         signature: string,
         secret: string,
     ): Promise<WebhookEvent> {
+        // BTCPay Server sends signature in format: sha256=HMAC_HASH
+        // We need to extract just the hash part for comparison
+        let actualSignature = signature;
+        if (signature.startsWith("sha256=")) {
+            actualSignature = signature.substring(7);
+        }
+
         const expected = createHmac("sha256", secret).update(payload, "utf8")
             .digest("hex");
-        if (signature !== expected) {
-            throw new Error("Invalid webhook signature");
+
+        // Add debugging information (remove in production)
+        console.log("BTCPay Webhook Signature Debug:", {
+            receivedSignature: signature,
+            extractedSignature: actualSignature,
+            expectedSignature: expected,
+            payloadLength: payload.length,
+            secretLength: secret.length,
+        });
+
+        if (actualSignature !== expected) {
+            throw new Error(
+                `Invalid webhook signature. Expected: ${expected}, Received: ${actualSignature}`,
+            );
         }
+
         const raw: BTCPayWebhookEventRaw = JSON.parse(payload);
         return {
             id: raw.deliveryId,

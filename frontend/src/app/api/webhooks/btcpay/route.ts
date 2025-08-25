@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
         const signature = request.headers.get("btcpay-sig");
 
         if (!signature) {
+            console.error("BTCPay webhook missing signature header");
             return NextResponse.json({ error: "No signature provided" }, {
                 status: 400,
             });
@@ -49,6 +50,11 @@ export async function POST(request: NextRequest) {
                     event.data.object as Record<string, unknown>,
                 );
                 break;
+            case "InvoiceCreated":
+                await handleInvoiceCreated(
+                    event.data.object as Record<string, unknown>,
+                );
+                break;
             default:
                 console.log(`Unhandled BTCPay event type: ${event.type}`);
         }
@@ -56,8 +62,33 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
     } catch (error) {
         console.error("BTCPay webhook error:", error);
-        return NextResponse.json({ error: "Webhook processing failed" }, {
-            status: 400,
+
+        // Provide more specific error responses
+        if (
+            error instanceof Error &&
+            error.message.includes("Invalid webhook signature")
+        ) {
+            return NextResponse.json({
+                error: "Invalid webhook signature",
+                details: error.message,
+            }, {
+                status: 401,
+            });
+        }
+
+        if (error instanceof SyntaxError) {
+            return NextResponse.json({
+                error: "Invalid JSON payload",
+            }, {
+                status: 400,
+            });
+        }
+
+        return NextResponse.json({
+            error: "Webhook processing failed",
+            details: error instanceof Error ? error.message : "Unknown error",
+        }, {
+            status: 500,
         });
     }
 }
@@ -113,6 +144,11 @@ async function handleInvoiceInvalid(invoice: Record<string, unknown>) {
 
 async function handleInvoiceProcessing(invoice: Record<string, unknown>) {
     console.log(`Invoice processing: ${String(invoice.id || "unknown")}`);
+}
+
+async function handleInvoiceCreated(invoice: Record<string, unknown>) {
+    console.log(`Invoice created: ${String(invoice.id || "unknown")}`);
+    // TODO: Save a record of the invoice in the database. Can be used to send coupons later.
 }
 
 function calculateNextBillingDate(interval: string): Date {
