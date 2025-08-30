@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Check, Crown } from "lucide-react"
 import Link from "next/link"
-import { StripeCheckoutButton } from "./StripeCheckoutButton"
 import { PaymentMethodSelector } from "./PaymentMethodSelector"
+import { StripeCheckoutButton } from "./StripeCheckoutButton"
 
 interface PricingCardProps {
   title: string
@@ -75,7 +75,7 @@ export function PricingCard({
             <PaymentMethodSelector
               lookupKey={stripeLookupKey}
               amount={billingPeriod === "monthly" ? 9 : 90}
-              interval={billingPeriod === "monthly" ? "month" : "year"}
+              interval={billingPeriod === "monthly" ? "monthly" : "yearly"}
             />
           ) : (
             <div className="space-y-2">

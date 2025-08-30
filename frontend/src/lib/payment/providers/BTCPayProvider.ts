@@ -305,7 +305,7 @@ export class BTCPayProvider implements PaymentProvider {
             if (btcRate) {
                 return amount / btcRate;
             }
-        } catch (error) {
+        } catch {
             // BTCPay rates unavailable, will try fallback
         }
 
@@ -363,7 +363,7 @@ export class BTCPayProvider implements PaymentProvider {
                         return btcRate;
                     }
                 }
-            } catch (error) {
+            } catch {
                 continue;
             }
         }
