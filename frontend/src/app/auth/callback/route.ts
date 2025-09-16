@@ -1,5 +1,5 @@
 import { NEXT_PUBLIC_SITE_URL } from "@/lib/env";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -20,7 +20,14 @@ export async function GET(request: Request) {
   if (code) {
     // Handle OAuth callback
     try {
-      await supabase.auth.exchangeCodeForSession(code);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (error) {
+        console.error("[Callback] Error exchanging code for session:", error);
+      } else if (data.user) {
+        // For OAuth users, handle email verification automatically
+        await handleOAuthEmailVerification(data.user);
+      }
     } catch (error) {
       console.error("[Callback] Error exchanging code for session:", error);
     }
@@ -68,4 +75,47 @@ export async function GET(request: Request) {
   // For OAuth flows, redirect to next URL if provided, otherwise to dashboard
   const redirectUrl = new URL(nextUrl || "/dashboard", NEXT_PUBLIC_SITE_URL);
   return NextResponse.redirect(redirectUrl);
+}
+
+/**
+ * Handle OAuth email verification
+ * Automatically verify email for trusted OAuth providers
+ */
+async function handleOAuthEmailVerification(user: { id: string; email?: string; email_verified?: boolean; app_metadata?: { provider?: string } }) {
+  try {
+    const provider = user.app_metadata?.provider;
+
+    console.log(`[Callback] OAuth user from provider: ${provider}`);
+    console.log(`[Callback] User email_verified: ${user.email_verified}`);
+
+    // If already verified, no action needed
+    if (user.email_verified) {
+      console.log("[Callback] User already email verified");
+      return;
+    }
+
+    // For trusted OAuth providers, auto-verify email
+    if (provider === 'google' || provider === 'github' || provider === 'apple') {
+      console.log(`[Callback] Auto-verifying email for ${provider} user`);
+
+      const serviceRoleSupabase = createServiceRoleClient();
+
+      const { error } = await serviceRoleSupabase.auth.admin.updateUserById(
+        user.id,
+        {
+          email_confirm: true
+        }
+      );
+
+      if (error) {
+        console.error(`[Callback] Failed to auto-verify ${provider} user:`, error);
+      } else {
+        console.log(`[Callback] Successfully auto-verified ${provider} user`);
+      }
+    } else {
+      console.log(`[Callback] Provider ${provider} requires manual verification`);
+    }
+  } catch (error) {
+    console.error("[Callback] Error handling OAuth email verification:", error);
+  }
 }

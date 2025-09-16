@@ -1,84 +1,114 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { useSearchParams, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { AuthForm } from "@/components/auth-form"
+import { EmailVerificationPrompt } from "@/components/auth/email-verification"
+import { checkEmailVerificationStatus } from "@/lib/email-verification"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/utils/supabase/client"
-import { useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { Loader2 } from "lucide-react"
 
 export default function VerifyEmailPage() {
-  const [loading, setLoading] = useState(false)
-  const { toast } = useToast()
-  const supabase = createClient()
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(true)
+  const [alreadyVerified, setAlreadyVerified] = useState(false)
+
   const email = searchParams.get("email")
+  const nextUrl = searchParams.get("next") || "/dashboard"
 
-  const handleResendEmail = async () => {
-    if (!email) {
-      toast({
-        title: "Error",
-        description: "Email address not found. Please try signing up again.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setLoading(true)
-    try {
-      const { error: resendError } = await supabase.auth.resend({
-        type: "signup",
-        email: email,
-      })
-
-      if (resendError) {
-        toast({
-          title: "Error",
-          description: resendError.message,
-          variant: "destructive",
-        })
-      } else {
-        toast({
-          title: "Email sent",
-          description:
-            "Verification email has been resent. Please check your inbox.",
-        })
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const status = await checkEmailVerificationStatus()
+        if (status.isVerified) {
+          setAlreadyVerified(true)
+          toast({
+            title: "Already verified",
+            description: "Your email is already verified. Redirecting...",
+          })
+          setTimeout(() => {
+            router.push(nextUrl)
+          }, 2000)
+        }
+      } catch (error) {
+        console.error('Failed to check verification status:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to resend verification email. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
     }
+
+    checkStatus()
+  }, [nextUrl, router, toast])
+
+  const handleVerificationComplete = () => {
+    router.push(nextUrl)
+  }
+
+  const handleCancel = () => {
+    router.push("/auth/login")
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Checking verification status...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (alreadyVerified) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="max-w-md text-center space-y-4">
+          <h2 className="text-2xl font-bold text-green-600">Email Already Verified</h2>
+          <p className="text-muted-foreground">
+            Your email address is already verified. Redirecting to dashboard...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!email) {
+    return (
+      <AuthForm
+        title="Email Required"
+        description="Please provide an email address to verify"
+        leftLink={{ href: "/auth/login", text: "Back to sign in" }}
+        rightLink={{
+          text: "Need an account?",
+          linkText: "Sign up",
+          href: "/auth/signup"
+        }}
+        hideSocialButtons
+      >
+        <p className="text-muted-foreground text-center">
+          Email address is required for verification. Please{" "}
+          <a href="/auth/login" className="text-primary hover:underline">
+            sign in
+          </a>{" "}
+          or{" "}
+          <a href="/auth/signup" className="text-primary hover:underline">
+            sign up
+          </a>{" "}
+          to continue.
+        </p>
+      </AuthForm>
+    )
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="max-w-md space-y-4 text-center">
-        <h2 className="text-center text-3xl font-bold tracking-tight">
-          Check your email
-        </h2>
-        <p className="text-muted-foreground mt-2 text-center text-sm">
-          We've sent you a verification link. Please check your email to verify
-          your account.
-        </p>
-
-        <div className="space-y-2">
-          <p className="text-muted-foreground text-xs">
-            Didn't receive an email? Check your spam folder.
-          </p>
-          <Button
-            onClick={handleResendEmail}
-            disabled={loading}
-            variant="link"
-            className="text-xs"
-          >
-            {loading ? "Sending..." : "Click here to resend verification email"}
-          </Button>
-        </div>
-      </div>
+    <div className="flex min-h-screen items-center justify-center px-4 py-16">
+      <EmailVerificationPrompt
+        email={email}
+        onVerificationComplete={handleVerificationComplete}
+        onCancel={handleCancel}
+      />
     </div>
   )
 }
