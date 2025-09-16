@@ -10,7 +10,18 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:check": "drizzle-kit check",
+    "db:test": "tsx scripts/test-connection.ts",
+    "db:pool:start": "docker-compose -f docker-compose.pooling.yml up -d",
+    "db:pool:stop": "docker-compose -f docker-compose.pooling.yml down",
+    "db:pool:logs": "docker-compose -f docker-compose.pooling.yml logs -f",
+    "setup:cloud-sql": "./scripts/setup-cloud-sql.sh",
+    "setup:security": "./scripts/configure-cloud-sql-security.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -37,6 +48,7 @@
     "next-themes": "^0.4.3",
     "ogl": "^1.0.11",
     "pg": "^8.13.1",
+    "postgres": "^3.4.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hook-form": "^7.53.2",
@@ -66,6 +78,7 @@
     "shadcn-ui": "^0.9.3",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.3"

@@ -35,7 +35,7 @@
         "id": 2,
         "title": "Set up Cloud SQL instance",
         "description": "Configure Cloud SQL PostgreSQL instance and establish secure database connection",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [],
         "details": "Create Cloud SQL instance, configure authentication, set up connection pooling, and establish secure connection from the application",
@@ -45,19 +45,19 @@
             "id": 1,
             "title": "Create Cloud SQL PostgreSQL instance",
             "description": "Set up the database instance with appropriate configuration",
-            "status": "pending"
+            "status": "done"
           },
           {
             "id": 2,
             "title": "Configure database authentication and security",
             "description": "Set up SSL certificates, firewall rules, and user authentication",
-            "status": "pending"
+            "status": "done"
           },
           {
             "id": 3,
             "title": "Set up connection pooling",
             "description": "Configure connection pooling for optimal performance",
-            "status": "pending"
+            "status": "done"
           }
         ]
       },
@@ -67,7 +67,9 @@
         "description": "Develop scripts to migrate schema and data from Supabase to Cloud SQL",
         "status": "pending",
         "priority": "high",
-        "dependencies": [2],
+        "dependencies": [
+          2
+        ],
         "details": "Create scripts for schema migration, data export/import, and validation of data integrity",
         "testStrategy": "Migration validation tests, data integrity checks, rollback procedures",
         "subtasks": [
@@ -97,7 +99,10 @@
         "description": "Modify application code to use Cloud SQL instead of Supabase",
         "status": "pending",
         "priority": "high",
-        "dependencies": [2, 3],
+        "dependencies": [
+          2,
+          3
+        ],
         "details": "Update database connection strings, authentication methods, and API integration",
         "testStrategy": "Integration tests, API endpoint tests, performance validation",
         "subtasks": [
@@ -124,7 +129,7 @@
     ],
     "metadata": {
       "created": "2025-09-16T16:04:31.397Z",
-      "updated": "2025-09-16T17:04:00.000Z",
+      "updated": "2025-09-16T16:44:17.718Z",
       "description": "Tasks for master context"
     }
   }
