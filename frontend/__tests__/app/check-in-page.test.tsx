@@ -1,5 +1,5 @@
 import CheckInPage from "@/app/check-in/page"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, act } from "@testing-library/react"
 import { vi } from "vitest"
 
 // Mock Next.js navigation
@@ -54,7 +54,10 @@ describe("CheckInPage", () => {
     render(<CheckInPage />)
 
     const checkInButton = screen.getByText("Check In Now")
-    checkInButton.click()
+
+    await act(async () => {
+      checkInButton.click()
+    })
 
     // Wait for the success state to be reflected in the UI
     await waitFor(() => {
@@ -87,7 +90,10 @@ describe("CheckInPage", () => {
     render(<CheckInPage />)
 
     const checkInButton = screen.getByText("Check In Now")
-    checkInButton.click()
+
+    await act(async () => {
+      checkInButton.click()
+    })
 
     // Wait for the error to be handled
     await waitFor(() => {
@@ -105,7 +111,10 @@ describe("CheckInPage", () => {
     render(<CheckInPage />)
 
     const checkInButton = screen.getByText("Check In Now")
-    checkInButton.click()
+
+    await act(async () => {
+      checkInButton.click()
+    })
 
     // Wait for the error to be handled
     await waitFor(() => {
@@ -129,7 +138,10 @@ describe("CheckInPage", () => {
     render(<CheckInPage />)
 
     const checkInButton = screen.getByText("Check In Now")
-    checkInButton.click()
+
+    await act(async () => {
+      checkInButton.click()
+    })
 
     // Should show loading state
     await waitFor(() => {
