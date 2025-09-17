@@ -16,6 +16,11 @@ export default defineConfig({
       NEXT_PUBLIC_SITE_URL: "https://keyfate.com",
       NEXT_PUBLIC_COMPANY: "KeyFate",
       NEXT_PUBLIC_PARENT_COMPANY: "Aviat, LLC",
+      // Google OAuth test configuration
+      GOOGLE_CLIENT_ID: "test-client-id.apps.googleusercontent.com",
+      GOOGLE_CLIENT_SECRET: "test-client-secret",
+      NEXTAUTH_SECRET: "test-nextauth-secret",
+      NEXTAUTH_URL: "http://localhost:3000",
     },
     include: [
       "src/**/*.{test,spec}.{js,ts,jsx,tsx}",

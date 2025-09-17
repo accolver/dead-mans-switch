@@ -3,16 +3,14 @@ if (!NEXT_PUBLIC_SITE_URL) {
   throw new Error("NEXT_PUBLIC_SITE_URL is not set");
 }
 
-const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env
-  .NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
-if (!NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not set");
-}
+// NextAuth environment variables (checked in auth config)
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET as string;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET as string;
 
-const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-if (!NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error("NEXT_PUBLIC_SUPABASE_URL is not set");
-}
+// Optional Supabase variables for migration period
+const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 const NEXT_PUBLIC_SUPPORT_EMAIL = process.env
   .NEXT_PUBLIC_SUPPORT_EMAIL as string;
@@ -43,4 +41,7 @@ export {
   NEXT_PUBLIC_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPPORT_EMAIL,
+  NEXTAUTH_SECRET,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
 };

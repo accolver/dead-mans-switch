@@ -1,12 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { NEXT_PUBLIC_SITE_URL } from "@/lib/env"
-import { createClient } from "@/utils/supabase/client"
+import { googleOAuthFlow } from "@/lib/auth/oauth-service"
 import { useState } from "react"
-
-// Create a single Supabase client instance for this component
-const supabase = createClient()
 
 export function SocialButtons() {
   const [loading, setLoading] = useState(false)
@@ -14,17 +10,11 @@ export function SocialButtons() {
   const handleGoogleLogin = async () => {
     setLoading(true)
     try {
-      const redirectUrl = `${NEXT_PUBLIC_SITE_URL}/auth/callback`
+      const result = await googleOAuthFlow({ redirectTo: "/dashboard" })
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
-        },
-      })
-
-      if (error) {
-        console.error("Error signing in with Google:", error)
+      if (!result.success) {
+        console.error("Error signing in with Google:", result.error)
+        // You can add toast notification here for user feedback
       }
     } catch (error) {
       console.error("Error during Google OAuth:", error)

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/utils/supabase/server"
+import { getServerSession } from "next-auth/next"
+import { authConfig } from "@/lib/auth-config"
 import { ReactNode } from "react"
 import { NavBar } from "@/components/nav-bar"
 
@@ -10,20 +11,22 @@ interface AuthenticatedLayoutProps {
 export default async function AuthenticatedLayout({
   children,
 }: AuthenticatedLayoutProps) {
-  const supabase = await createClient()
+  try {
+    // Use NextAuth server session instead of Supabase
+    const session = await getServerSession(authConfig)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    if (!session?.user) {
+      redirect("/sign-in")
+    }
 
-  if (!user) {
-    redirect("/auth/login")
+    return (
+      <>
+        <NavBar />
+        <main>{children}</main>
+      </>
+    )
+  } catch (error) {
+    console.error("[AuthenticatedLayout] Session error:", error)
+    redirect("/sign-in")
   }
-
-  return (
-    <>
-      <NavBar />
-      <main>{children}</main>
-    </>
-  )
 }
