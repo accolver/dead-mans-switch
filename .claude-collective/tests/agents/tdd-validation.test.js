@@ -1,8 +1,9 @@
 // tdd-validation.test.js
 // Test-Driven Development validation agent integration tests
 
-const fs = require('fs-extra');
-const path = require('path');
+import fs from 'fs-extra';
+import path from 'path';
+import { describe, test, expect } from 'vitest';
 
 describe('TDD Validation Agent', () => {
   

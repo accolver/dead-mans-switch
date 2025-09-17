@@ -1,8 +1,9 @@
 // agent-handoff.test.js
 // Agent handoff validation tests for the collective system
 
-const fs = require('fs-extra');
-const path = require('path');
+import fs from 'fs-extra';
+import path from 'path';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 
 describe('Agent Handoff Validation', () => {
   

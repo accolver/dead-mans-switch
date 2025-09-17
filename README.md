@@ -2,7 +2,28 @@
 
 A secure digital service that automatically triggers an alarm or other emergency response when the user is incapacitated.
 
-## Quick Start
+## 🚀 Quick Start (Local Development)
+
+**New! Complete local development environment** - no Supabase required:
+
+```bash
+# 1. Set up local environment
+make install
+
+# 2. Start development stack
+make dev
+
+# 3. Open application
+open http://localhost:3000
+```
+
+**Development credentials:**
+- dev@localhost / password123 (Free tier)
+- test@localhost / password123 (Pro tier)
+
+For detailed setup instructions, see [INFRASTRUCTURE.md](./INFRASTRUCTURE.md)
+
+## Alternative Setup Options
 
 1. **Deploy Infrastructure:** See [Infrastructure README](infrastructure/README.md) for automated Terragrunt deployment
 2. **Frontend Development:** See [Frontend README](frontend/README.md) for local development setup
@@ -10,8 +31,15 @@ A secure digital service that automatically triggers an alarm or other emergency
 
 ## Tech Stack
 
+### Local Development
 - **Frontend:** Next.js, TypeScript, Tailwind CSS, Shadcn UI
-- **Backend:** Supabase (Postgres, Auth, Edge Functions)
+- **Database:** PostgreSQL 16 (Docker)
+- **ORM:** Drizzle ORM
+- **Orchestration:** Docker Compose, Make
+- **Caching:** Redis 7 (optional)
+
+### Production Options
+- **Legacy:** Supabase (Postgres, Auth, Edge Functions)
 - **Infrastructure:** Google Cloud Run, Terraform, Terragrunt
 - **Security:** Client-side Shamir's Secret Sharing, Secret Manager
 

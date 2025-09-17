@@ -1,0 +1,29 @@
+{
+  "name": "dead-mans-switch-infrastructure",
+  "version": "1.0.0",
+  "description": "Local development infrastructure for Dead Man's Switch",
+  "private": true,
+  "scripts": {
+    "install-dev": "make install",
+    "dev": "make dev",
+    "test": "make test",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed-local-db.js",
+    "test-db": "node scripts/test-db-connection.js",
+    "reset-db": "make reset-db"
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  },
+  "author": "Dead Man's Switch Development Team",
+  "license": "MIT"
+}

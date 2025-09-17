@@ -1,8 +1,9 @@
 // advanced-contract.test.js
 // Advanced contract validation scenarios for complex handoff patterns
 
-const fs = require('fs-extra');
-const path = require('path');
+import fs from 'fs-extra';
+import path from 'path';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 
 describe('Advanced Contract Validation', () => {
   

@@ -1,9 +1,10 @@
-const { defineConfig } = require('vitest/config')
+import { defineConfig } from 'vitest/config'
 
-module.exports = defineConfig({
+export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}']
+    include: ['tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['tests/setup.js']
   }
 })

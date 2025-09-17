@@ -2,6 +2,10 @@
 // Contract validation system tests
 // Tests the TestContractValidator integration
 
+import fs from 'fs-extra';
+import path from 'path';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+
 // Mock TestContractValidator since it's part of the test framework
 class TestContractValidator {
   parseContract(agentOutput) {
@@ -111,8 +115,6 @@ class TestContractValidator {
     };
   }
 }
-const fs = require('fs-extra');
-const path = require('path');
 
 describe('Contract Validation System', () => {
   let validator;

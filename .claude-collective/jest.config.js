@@ -1,4 +1,15 @@
-module.exports = {
+export default {
+  preset: 'default',
+  extensionsToTreatAsEsm: ['.js'],
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  },
+  moduleNameMapping: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  },
+  transform: {},
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
   testMatch: ['**/?(*.)+(spec|test).js'],
@@ -11,8 +22,8 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
   testTimeout: 10000,
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
-  
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+
   // Coverage thresholds
   coverageThreshold: {
     global: {
@@ -22,7 +33,7 @@ module.exports = {
       statements: 80
     }
   },
-  
+
   // Test result processors
   reporters: [
     'default',
