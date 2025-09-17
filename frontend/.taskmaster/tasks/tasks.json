@@ -65,7 +65,7 @@
         "id": 3,
         "title": "Create database migration scripts",
         "description": "Develop scripts to migrate schema and data from Supabase to Cloud SQL",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           2
@@ -77,19 +77,19 @@
             "id": 1,
             "title": "Export Supabase schema and data",
             "description": "Create scripts to export current database structure and data",
-            "status": "pending"
+            "status": "done"
           },
           {
             "id": 2,
             "title": "Create Cloud SQL schema migration",
             "description": "Adapt exported schema for Cloud SQL PostgreSQL",
-            "status": "pending"
+            "status": "done"
           },
           {
             "id": 3,
             "title": "Develop data migration scripts",
             "description": "Scripts to safely migrate user and application data",
-            "status": "pending"
+            "status": "done"
           }
         ]
       },
@@ -129,7 +129,7 @@
     ],
     "metadata": {
       "created": "2025-09-16T16:04:31.397Z",
-      "updated": "2025-09-16T16:44:17.718Z",
+      "updated": "2025-09-16T17:18:38.748Z",
       "description": "Tasks for master context"
     }
   }

@@ -11,8 +11,8 @@ if (!connectionString) {
 
 // Enhanced connection configuration with pooling
 const connectionConfig = {
-  // SSL configuration
-  ssl: process.env.NODE_ENV === "production" ? "require" : false,
+  // SSL configuration - use proper type for postgres.js
+  ssl: process.env.NODE_ENV === "production" ? ("require" as const) : false,
 
   // Connection pooling settings
   max: parseInt(process.env.DB_POOL_MAX || "20"), // Maximum connections in pool
@@ -33,7 +33,7 @@ const connectionConfig = {
   // Connection validation
   connection: {
     application_name: "keyfate-app",
-    statement_timeout: process.env.DB_STATEMENT_TIMEOUT || "30000", // 30 seconds
+    statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT || "30000"), // 30 seconds in ms
   },
 };
 
@@ -59,12 +59,13 @@ export async function checkDatabaseConnection(): Promise<boolean> {
 
 // Connection pool monitoring
 export function getConnectionPoolStats() {
+  // Note: postgres.js doesn't expose detailed pool stats directly
+  // These are the configured values, not runtime stats
   return {
-    totalConnections: client.totalConnections,
-    idleConnections: client.idleConnections,
-    activeConnections: client.totalConnections - client.idleConnections,
     maxConnections: connectionConfig.max,
     minConnections: connectionConfig.min,
+    // Runtime stats would need to be tracked separately or use database queries
+    // to check pg_stat_activity for actual connection counts
   };
 }
 

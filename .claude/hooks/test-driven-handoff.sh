@@ -219,15 +219,36 @@ agent_tdd_checkpoint() {
     
     # Quick test validation - must pass to proceed
     # Check for dependencies first to avoid false positives
-    if [[ ! -d ".claude-collective/node_modules" ]]; then
-        log "Installing dependencies in .claude-collective/ for testing..."
-        (cd .claude-collective && npm install > /dev/null 2>&1) || log "Failed to install dependencies"
+    # Find the project root by looking for .claude-collective directory
+    local project_root=""
+    local current_dir="$(pwd)"
+    local check_dir="$current_dir"
+
+    # Search up the directory tree for .claude-collective
+    while [[ "$check_dir" != "/" ]]; do
+        if [[ -d "$check_dir/.claude-collective" ]]; then
+            project_root="$check_dir"
+            break
+        fi
+        check_dir="$(dirname "$check_dir")"
+    done
+
+    if [[ -z "$project_root" ]]; then
+        log "❌ AGENT TDD FAILURE: $agent_name - .claude-collective directory not found"
+        return 1
     fi
-    
+
+    log "Found project root at: $project_root"
+
+    if [[ ! -d "$project_root/.claude-collective/node_modules" ]]; then
+        log "Installing dependencies in .claude-collective/ for testing..."
+        (cd "$project_root/.claude-collective" && npm install > /dev/null 2>&1) || log "Failed to install dependencies"
+    fi
+
     # Run vitest from .claude-collective directory where dependencies are installed
     log "🧪 Running vitest validation for $agent_name..."
-    
-    timeout 60 bash -c "cd .claude-collective && npx vitest run" > /tmp/agent-test-$agent_name.log 2>&1
+
+    timeout 60 bash -c "cd '$project_root/.claude-collective' && npx vitest run" > /tmp/agent-test-$agent_name.log 2>&1
     local exit_code=$?
     
     # DUAL VALIDATION: Check both exit code AND output parsing

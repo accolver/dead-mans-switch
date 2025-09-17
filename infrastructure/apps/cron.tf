@@ -2,8 +2,15 @@
 # These jobs replace the manual trigger-reminders.sh script
 
 locals {
-  # Construct the Supabase functions URL
-  supabase_functions_url = "${var.next_public_supabase_url}/functions/v1"
+  # Ensure Supabase URL starts with https:// for Cloud Scheduler compatibility
+  base_supabase_url = var.next_public_supabase_url != "" ? (
+    startswith(var.next_public_supabase_url, "https://") ? var.next_public_supabase_url :
+    startswith(var.next_public_supabase_url, "http://") ? replace(var.next_public_supabase_url, "http://", "https://") :
+    "https://${var.next_public_supabase_url}"
+  ) : "https://placeholder.supabase.co"
+
+  # Construct the Supabase functions URL with validated HTTPS
+  supabase_functions_url = "${local.base_supabase_url}/functions/v1"
 
   # Common headers for all requests
   common_headers = {

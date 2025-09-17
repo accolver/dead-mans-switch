@@ -194,104 +194,114 @@
       {
         "id": 5,
         "title": "Production Infrastructure Deployment",
-        "description": "Deploy application to Google Cloud Run with proper staging and production environments",
-        "details": "Infrastructure is configured with Terraform/Terragrunt but needs deployment. Tasks: 1) Deploy staging environment to Google Cloud Run, 2) Configure SSL certificates and custom domain, 3) Set up production database with proper backups, 4) Configure monitoring and alerting (Cloud Monitoring, Sentry), 5) Implement CI/CD pipeline for automated deployments, 6) Configure environment variables and secrets management, 7) Set up log aggregation and monitoring, 8) Deploy production environment with blue/green deployment strategy.",
-        "testStrategy": "Infrastructure tests, deployment pipeline tests, smoke tests for both environments, performance tests under load, disaster recovery tests",
-        "priority": "high",
+        "description": "Deploy application to Google Cloud Run with Google Cloud SQL PostgreSQL database and proper staging and production environments",
+        "status": "pending",
         "dependencies": [
           2,
           3
         ],
-        "status": "pending",
+        "priority": "high",
+        "details": "Infrastructure is configured with Terraform/Terragrunt for Google Cloud deployment. Tasks: 1) Deploy staging environment to Google Cloud Run, 2) Set up Google Cloud SQL PostgreSQL instance with VPC configuration, 3) Configure SSL certificates and custom domain, 4) Deploy fresh schema using Drizzle ORM to Cloud SQL, 5) Configure proper IAM roles for Cloud SQL access, 6) Implement CI/CD pipeline for automated deployments, 7) Configure environment variables for Cloud SQL connection, 8) Set up database backup and monitoring, 9) Deploy production environment with complete Google Cloud infrastructure stack.",
+        "testStrategy": "Infrastructure tests, Cloud SQL connection tests, Drizzle migration tests, deployment pipeline tests, smoke tests for both environments, performance tests under load, database backup/restore tests",
         "subtasks": [
           {
             "id": 1,
             "title": "Deploy staging environment to Google Cloud Run",
             "description": "Set up and deploy the staging environment using existing Terraform/Terragrunt configuration to Google Cloud Run",
+            "status": "pending",
             "dependencies": [],
             "details": "Execute Terraform deployment for staging environment, configure Cloud Run service with appropriate resource limits, verify application deployment and health checks",
-            "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "Cloud Run deployment validation, health check tests, resource limit verification"
           },
           {
             "id": 2,
-            "title": "Configure SSL certificates and custom domain",
-            "description": "Set up SSL certificates and configure custom domain mapping for both staging and production environments",
-            "dependencies": [
-              "5.1"
-            ],
-            "details": "Configure Google-managed SSL certificates, set up custom domain mapping, verify HTTPS redirects and certificate validation",
+            "title": "Set up Google Cloud SQL PostgreSQL instance with VPC configuration",
+            "description": "Deploy Cloud SQL PostgreSQL instance with proper VPC configuration, security settings, and high availability",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [],
+            "details": "Create Cloud SQL PostgreSQL 15 instance with VPC peering, configure SSL/TLS encryption, set up authorized networks, enable high availability for production, configure storage auto-increase and backup settings. Use keyfate-db-production instance name with us-central1 region.",
+            "testStrategy": "Cloud SQL instance connectivity tests, SSL certificate validation, VPC peering verification, backup configuration tests"
           },
           {
             "id": 3,
-            "title": "Set up production database with proper backups",
-            "description": "Deploy production database instance with automated backup configuration and disaster recovery procedures",
-            "dependencies": [
-              "5.1"
-            ],
-            "details": "Configure production database instance, set up automated daily backups, implement point-in-time recovery, test backup restoration procedures",
+            "title": "Configure SSL certificates and custom domain",
+            "description": "Set up SSL certificates and configure custom domain mapping for both staging and production environments",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [
+              1
+            ],
+            "details": "Configure Google-managed SSL certificates, set up custom domain mapping for Cloud Run services, verify HTTPS redirects and certificate validation",
+            "testStrategy": "SSL certificate validation, custom domain resolution tests, HTTPS redirect verification"
           },
           {
             "id": 4,
-            "title": "Configure monitoring and alerting (Cloud Monitoring, Sentry)",
-            "description": "Implement comprehensive monitoring and alerting system using Google Cloud Monitoring and Sentry integration",
-            "dependencies": [
-              "5.1"
-            ],
-            "details": "Set up Cloud Monitoring dashboards, configure alerting policies for critical metrics, integrate Sentry for error tracking, set up notification channels",
+            "title": "Deploy fresh schema using Drizzle ORM to Cloud SQL",
+            "description": "Execute Drizzle migrations to deploy the complete database schema to the new Cloud SQL instance",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [
+              2
+            ],
+            "details": "Configure Drizzle connection to Cloud SQL using DATABASE_URL, run initial schema migration including all tables (secrets, user_subscriptions, reminder_jobs, etc.), verify all enums and constraints are properly created, test data integrity",
+            "testStrategy": "Schema migration validation, table creation verification, constraint testing, Drizzle ORM connection tests"
           },
           {
             "id": 5,
-            "title": "Implement CI/CD pipeline for automated deployments",
-            "description": "Create automated deployment pipeline with proper testing stages and deployment approvals",
-            "dependencies": [
-              "5.2",
-              "5.3"
-            ],
-            "details": "Configure GitHub Actions or Cloud Build pipeline, implement automated testing stages, set up deployment approvals, configure rollback procedures",
+            "title": "Configure proper IAM roles for Cloud SQL access",
+            "description": "Set up IAM roles and service accounts for secure Cloud SQL access from Cloud Run",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [
+              2
+            ],
+            "details": "Create Cloud SQL client service account, configure IAM roles (Cloud SQL Client, Cloud SQL Instance User), set up Cloud SQL Proxy authentication, configure workload identity for Cloud Run service account",
+            "testStrategy": "IAM role verification, service account authentication tests, Cloud SQL Proxy connection validation"
           },
           {
             "id": 6,
-            "title": "Configure environment variables and secrets management",
-            "description": "Set up secure environment variable and secrets management using Google Secret Manager",
-            "dependencies": [
-              "5.3"
-            ],
-            "details": "Migrate sensitive configuration to Google Secret Manager, configure environment-specific variables, implement secure secret rotation procedures",
+            "title": "Implement CI/CD pipeline for automated deployments",
+            "description": "Create automated deployment pipeline with proper testing stages and deployment approvals",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Configure GitHub Actions or Cloud Build pipeline, implement automated testing stages including Drizzle migrations, set up deployment approvals, configure rollback procedures, add database migration steps to pipeline",
+            "testStrategy": "Pipeline execution tests, automated testing validation, deployment approval workflow tests, rollback procedure verification"
           },
           {
             "id": 7,
-            "title": "Set up log aggregation and monitoring",
-            "description": "Configure centralized logging and log analysis for application monitoring and debugging",
-            "dependencies": [
-              "5.4"
-            ],
-            "details": "Configure Google Cloud Logging, set up log-based metrics and alerts, implement structured logging in application, create log analysis dashboards",
+            "title": "Configure environment variables for Cloud SQL connection",
+            "description": "Set up secure environment variable and secrets management for Cloud SQL connectivity using Google Secret Manager",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Migrate DATABASE_URL and CLOUD_SQL_CONNECTION_NAME to Google Secret Manager, configure environment-specific variables for staging and production, implement secure secret rotation procedures, update Cloud Run service configuration with secret references",
+            "testStrategy": "Secret Manager integration tests, environment variable validation, Cloud SQL connection string verification"
           },
           {
             "id": 8,
-            "title": "Deploy production environment with blue/green deployment strategy",
-            "description": "Deploy production environment using blue/green deployment strategy for zero-downtime updates",
-            "dependencies": [
-              "5.5",
-              "5.6",
-              "5.7"
-            ],
-            "details": "Implement blue/green deployment configuration, test traffic switching mechanisms, configure health checks and rollback procedures, verify production deployment",
+            "title": "Set up database backup and monitoring",
+            "description": "Configure automated backups, monitoring, and alerting for Cloud SQL instance",
             "status": "pending",
-            "testStrategy": ""
+            "dependencies": [
+              4
+            ],
+            "details": "Configure automated daily backups with point-in-time recovery, set up Cloud Monitoring dashboards for database metrics, configure alerting policies for database performance and availability, integrate with Cloud Logging for query analysis",
+            "testStrategy": "Backup restoration tests, monitoring dashboard validation, alert policy verification, performance metric collection tests"
+          },
+          {
+            "id": 9,
+            "title": "Deploy production environment with complete Google Cloud infrastructure stack",
+            "description": "Deploy production environment with all components integrated including Cloud Run, Cloud SQL, monitoring, and security",
+            "status": "pending",
+            "dependencies": [
+              6,
+              7,
+              8
+            ],
+            "details": "Execute complete production deployment using Terraform/Terragrunt, verify Cloud Run to Cloud SQL connectivity, test complete application functionality, implement blue/green deployment strategy, validate all monitoring and alerting systems",
+            "testStrategy": "End-to-end deployment tests, production connectivity validation, blue/green deployment verification, complete system integration tests"
           }
         ]
       },

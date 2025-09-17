@@ -96,10 +96,12 @@ db_url                      = "postgresql://postgres:[password]@db.[project-id].
 ### Prerequisites
 
 Ensure you have either:
+
 - **PostgreSQL client** (`psql`) installed on your system, OR
 - **Supabase CLI** installed and configured
 
 Install via:
+
 ```bash
 # PostgreSQL client (recommended)
 brew install postgresql        # macOS
@@ -112,11 +114,13 @@ npm install -g supabase
 ### Verification
 
 After deployment, the infrastructure automatically verifies the configuration and displays:
+
 - Cron configuration status
 - Scheduled cron jobs ('check-secrets', 'process-reminders')
 - Service role key status
 
 You can also manually verify by checking the Supabase logs or running:
+
 ```sql
 SELECT * FROM cron_config;
 SELECT * FROM cron.job WHERE jobname IN ('check-secrets', 'process-reminders');
@@ -168,8 +172,6 @@ Sensitive variables are stored in Secret Manager and injected at runtime:
 - `DB_URL`: Database connection string
 - `ENCRYPTION_KEY`: Application encryption key
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: OAuth credentials
-- `SUPABASE_JWT_SECRET`: JWT signing secret
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key
 
 ### How Secrets Work
 
