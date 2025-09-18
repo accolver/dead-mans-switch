@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import EmailProvider from "next-auth/providers/email";
 import { assertValidOAuthConfig } from "./auth/oauth-config-validator";
 
 // Validate OAuth configuration at startup (skip in test environment)
@@ -32,6 +33,17 @@ export const authConfig: NextAuthOptions = {
         },
       },
     }),
+    EmailProvider({
+      server: {
+        host: "smtp.sendgrid.net",
+        port: 587,
+        auth: {
+          user: "apikey",
+          pass: process.env.SENDGRID_API_KEY!,
+        },
+      },
+      from: process.env.SENDGRID_ADMIN_EMAIL!,
+    }),
   ],
   pages: {
     signIn: "/sign-in",
@@ -44,6 +56,11 @@ export const authConfig: NextAuthOptions = {
         // Google provides email_verified in the profile
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (profile as any)?.email_verified === true;
+      }
+
+      // Allow email provider (NextAuth handles email verification)
+      if (account?.provider === "email") {
+        return true;
       }
 
       return false; // Deny access by default

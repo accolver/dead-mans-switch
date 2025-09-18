@@ -8,17 +8,9 @@ const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET as string;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET as string;
 
-// Supabase variables - required for database access during migration
-const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-// Validate Supabase configuration when used
-if (typeof window === "undefined") {
-  // Server-side validation
-  if (!NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.warn("Supabase configuration incomplete. Some features may not work.");
-  }
-}
+// Supabase variables - optional for backward compatibility during migration
+const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "dummy-key";
+const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dummy.supabase.co";
 
 const NEXT_PUBLIC_SUPPORT_EMAIL = process.env
   .NEXT_PUBLIC_SUPPORT_EMAIL as string;

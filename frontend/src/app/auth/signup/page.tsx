@@ -5,38 +5,69 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { NEXT_PUBLIC_SITE_URL } from "@/lib/env"
-import { supabase } from "@/lib/supabase"
+import { signIn } from "next-auth/react"
 import { AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
   const searchParams = useSearchParams()
   const nextUrl = searchParams.get("next")
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setLoading(true)
+    setError(null)
+
     try {
-      const { error } = await supabase.auth.signUp({
+      const result = await signIn("email", {
         email,
-        password,
-        options: {
-          emailRedirectTo: nextUrl
-            ? `${NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(nextUrl)}`
-            : `${NEXT_PUBLIC_SITE_URL}/auth/callback`,
-        },
+        redirect: false,
+        callbackUrl: nextUrl ? `${window.location.origin}${nextUrl}` : "/dashboard",
       })
-      if (error) throw error
-      router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`)
+
+      if (result?.error) {
+        setError("Failed to send sign-up email. Please try again.")
+      } else {
+        setEmailSent(true)
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred")
+    } finally {
+      setLoading(false)
     }
+  }
+
+  if (emailSent) {
+    return (
+      <AuthForm
+        title="Check your email"
+        description={`We've sent a sign-in link to ${email}`}
+        leftLink={{ href: "/sign-in", text: "Back to sign in" }}
+        rightLink={{
+          text: "Wrong email?",
+          linkText: "Try again",
+          href: "#",
+        }}
+        hideSocialButtons
+      >
+        <div className="text-center text-sm text-muted-foreground">
+          <p>Click the link in your email to create your account and sign in.</p>
+        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => setEmailSent(false)}
+        >
+          Try another email
+        </Button>
+      </AuthForm>
+    )
   }
 
   return (
@@ -48,8 +79,8 @@ export default function SignUpPage() {
           <Link
             href={
               nextUrl
-                ? `/auth/login?next=${encodeURIComponent(nextUrl)}`
-                : "/auth/login"
+                ? `/sign-in?next=${encodeURIComponent(nextUrl)}`
+                : "/sign-in"
             }
             className="text-primary hover:text-primary/90 transition hover:underline"
           >
@@ -58,13 +89,13 @@ export default function SignUpPage() {
           if you already have an account
         </>
       }
-      leftLink={{ href: "/auth/reset-password", text: "Forgot password?" }}
+      leftLink={{ href: "/sign-in", text: "Back to sign in" }}
       rightLink={{
         text: "Have an account?",
         linkText: "Sign in",
         href: nextUrl
-          ? `/auth/login?next=${encodeURIComponent(nextUrl)}`
-          : "/auth/login",
+          ? `/sign-in?next=${encodeURIComponent(nextUrl)}`
+          : "/sign-in",
       }}
     >
       {error && (
@@ -88,21 +119,8 @@ export default function SignUpPage() {
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-
-        <Button type="submit" className="w-full">
-          Sign up
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Sending..." : "Create account"}
         </Button>
       </form>
     </AuthForm>

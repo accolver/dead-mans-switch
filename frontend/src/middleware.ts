@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 const PUBLIC_ROUTES = [
   '/',
   '/auth/login',
+  '/auth/signup',
   '/auth/error',
   '/sign-in'
 ] as const;

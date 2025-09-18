@@ -7,7 +7,8 @@ import {
   integer,
   boolean,
   jsonb,
-  numeric
+  numeric,
+  primaryKey
 } from "drizzle-orm/pg-core";
 
 // Enums
@@ -18,10 +19,53 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "
 export const reminderStatusEnum = pgEnum("reminder_status", ["pending", "sent", "failed", "cancelled"]);
 export const reminderTypeEnum = pgEnum("reminder_type", ["25_percent", "50_percent", "7_days", "3_days", "24_hours", "12_hours", "1_hour"]);
 
-// Tables
+// NextAuth.js Tables
+export const users = pgTable("users", {
+  id: text("id").notNull().primaryKey(),
+  email: text("email").notNull().unique(),
+  emailVerified: timestamp("email_verified", { mode: "date" }),
+  name: text("name"),
+  image: text("image"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+export const accounts = pgTable("accounts", {
+  id: text("id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  provider: text("provider").notNull(),
+  providerAccountId: text("provider_account_id").notNull(),
+  refresh_token: text("refresh_token"),
+  access_token: text("access_token"),
+  expires_at: integer("expires_at"),
+  token_type: text("token_type"),
+  scope: text("scope"),
+  id_token: text("id_token"),
+  session_state: text("session_state"),
+}, (account) => ({
+  compoundKey: primaryKey({ columns: [account.provider, account.providerAccountId] }),
+}));
+
+export const sessions = pgTable("sessions", {
+  id: text("id").notNull().primaryKey(),
+  sessionToken: text("session_token").notNull().unique(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
+});
+
+export const verificationTokens = pgTable("verification_tokens", {
+  identifier: text("identifier").notNull(),
+  token: text("token").notNull().unique(),
+  expires: timestamp("expires", { mode: "date" }).notNull(),
+}, (vt) => ({
+  compoundKey: primaryKey(vt.identifier, vt.token),
+}));
+
+// Application Tables
 export const secrets = pgTable("secrets", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   recipientName: text("recipient_name").notNull(),
   recipientEmail: text("recipient_email"),
@@ -66,7 +110,7 @@ export const checkInTokens = pgTable("check_in_tokens", {
 export const checkinHistory = pgTable("checkin_history", {
   id: uuid("id").primaryKey().defaultRandom(),
   secretId: uuid("secret_id").notNull().references(() => secrets.id),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   checkedInAt: timestamp("checked_in_at").notNull(),
   nextCheckIn: timestamp("next_check_in").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -120,7 +164,7 @@ export const subscriptionTiers = pgTable("subscription_tiers", {
 
 export const userContactMethods = pgTable("user_contact_methods", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id").notNull(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   email: text("email"),
   phone: text("phone"),
   preferredMethod: contactMethodEnum("preferred_method").default("email"),
@@ -130,7 +174,7 @@ export const userContactMethods = pgTable("user_contact_methods", {
 
 export const userSubscriptions = pgTable("user_subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id").notNull().unique(),
+  userId: text("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
   tierId: uuid("tier_id").notNull().references(() => subscriptionTiers.id),
   provider: text("provider"),
   providerCustomerId: text("provider_customer_id"),
@@ -153,3 +197,10 @@ export type CheckInToken = typeof checkInTokens.$inferSelect;
 export type CheckinHistory = typeof checkinHistory.$inferSelect;
 export type UserContactMethod = typeof userContactMethods.$inferSelect;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
+
+// NextAuth.js types
+export type User = typeof users.$inferSelect;
+export type UserInsert = typeof users.$inferInsert;
+export type Account = typeof accounts.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
+export type VerificationToken = typeof verificationTokens.$inferSelect;

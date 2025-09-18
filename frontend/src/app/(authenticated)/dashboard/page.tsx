@@ -3,24 +3,26 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoadingIndicator } from "@/components/ui/loading-indicator"
 import { createClient } from "@/utils/supabase/server"
+import { getServerSession } from "next-auth/next"
+import { authConfig } from "@/lib/auth-config"
 import Link from "next/link"
 import { Suspense } from "react"
+import { redirect } from "next/navigation"
 
 async function SecretsLoader() {
-  const supabase = await createClient()
+  // Use NextAuth for authentication
+  const session = await getServerSession(authConfig)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return <div>Please sign in to continue</div>
+  if (!session?.user?.id) {
+    redirect("/sign-in")
   }
 
+  // Use Supabase for data queries with NextAuth user ID
+  const supabase = await createClient()
   const { data: secrets } = await supabase
     .from("secrets")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", session.user.id)
     .order("created_at", { ascending: false })
 
   if (!secrets || secrets.length === 0) {

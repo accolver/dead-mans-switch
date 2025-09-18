@@ -1,5 +1,6 @@
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import fs from "fs";
 import path from "path";
 
 async function runMigrations() {
@@ -8,22 +9,36 @@ async function runMigrations() {
 
   console.log("Running database migrations...");
 
-  const sql = postgres(connectionString, { max: 1 });
+  // Check if we should reset the database first
+  const shouldReset = process.argv.includes('--reset');
+  if (shouldReset) {
+    console.log("🔄 Reset flag detected, dropping all tables first...");
+  }
+
+  const queryClient = postgres(connectionString, { max: 1 });
+  const db = drizzle(queryClient);
 
   try {
-    // Read and execute the migration file
-    const migrationPath = path.join(__dirname, "../src/lib/db/migrations/0001_auth_tables.sql");
-    const migrationSQL = fs.readFileSync(migrationPath, "utf8");
+    if (shouldReset) {
+      console.log("🗑️  Dropping all tables and types...");
+      await queryClient`DROP SCHEMA public CASCADE`;
+      await queryClient`CREATE SCHEMA public`;
+      await queryClient`GRANT ALL ON SCHEMA public TO postgres`;
+      await queryClient`GRANT ALL ON SCHEMA public TO public`;
+      console.log("✅ Database reset complete");
+    }
 
-    // Execute the migration
-    await sql.unsafe(migrationSQL);
+    // Use Drizzle's built-in migration runner
+    const migrationsFolder = path.join(__dirname, "../drizzle");
+    console.log(`📁 Running migrations from: ${migrationsFolder}`);
 
-    console.log("✅ Migrations completed successfully");
+    await migrate(db, { migrationsFolder });
+    console.log("✅ All migrations completed successfully");
   } catch (error) {
     console.error("❌ Migration failed:", error);
     process.exit(1);
   } finally {
-    await sql.end();
+    await queryClient.end();
   }
 }
 
