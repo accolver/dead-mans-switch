@@ -38,10 +38,11 @@ export const authConfig: NextAuthOptions = {
     error: "/auth/error",
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ account, profile }) {
       // Check email verification for OAuth providers
       if (account?.provider === "google") {
         // Google provides email_verified in the profile
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (profile as any)?.email_verified === true;
       }
 
@@ -49,6 +50,7 @@ export const authConfig: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session?.user && token.sub) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).id = token.sub;
       }
       return session;

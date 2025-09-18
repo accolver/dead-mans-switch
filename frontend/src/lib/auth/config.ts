@@ -46,11 +46,12 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       // Send properties to the client
       if (token.user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         session.user = token.user as any
       }
       return session
     },
-    async signIn({ user, account, profile }) {
+    async signIn({ account }) {
       // Allow sign in for OAuth providers
       if (account?.provider === 'google') {
         return true

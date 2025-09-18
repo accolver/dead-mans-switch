@@ -17,7 +17,7 @@
             "description": "Enable email verification with OTP in Supabase settings and configure email authentication templates",
             "dependencies": [],
             "details": "Configure Supabase Auth settings to enable email verification, set up OTP verification flow, customize email templates for verification emails, configure SMTP settings for email delivery, and set appropriate verification timeouts and retry limits.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           },
           {
@@ -376,7 +376,7 @@
     ],
     "metadata": {
       "created": "2025-09-16T12:50:17.322Z",
-      "updated": "2025-09-16T12:50:17.322Z",
+      "updated": "2025-09-17T15:49:34.665Z",
       "description": "Tasks for master context"
     }
   }

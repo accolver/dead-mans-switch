@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { googleOAuthFlow, handleOAuthCallback, validateOAuthState } from '../oauth-service'
+import { validateOAuthState } from '../oauth-service'
 
 // Integration tests for Google OAuth - these test the actual environment setup
 describe('OAuth Integration Tests', () => {

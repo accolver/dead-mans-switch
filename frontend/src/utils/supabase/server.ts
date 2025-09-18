@@ -36,9 +36,20 @@ export async function createClient() {
 }
 
 export function createServiceRoleClient() {
+  // Validate environment variables
+  if (!NEXT_PUBLIC_SUPABASE_URL) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL is not set");
+  }
+
+  if (!NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not set");
+  }
+
+  const serviceKey = getSUPABASE_SERVICE_ROLE_KEY();
+
   return createSupabaseClient<Database>(
     NEXT_PUBLIC_SUPABASE_URL,
-    getSUPABASE_SERVICE_ROLE_KEY(),
+    serviceKey,
     {
       auth: { persistSession: false, autoRefreshToken: false },
       db: { schema: "public" },

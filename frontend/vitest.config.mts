@@ -21,6 +21,9 @@ export default defineConfig({
       GOOGLE_CLIENT_SECRET: "test-client-secret",
       NEXTAUTH_SECRET: "test-nextauth-secret",
       NEXTAUTH_URL: "http://localhost:3000",
+      // Database configuration for tests
+      DATABASE_URL: "postgresql://postgres:test_password@localhost:5432/test_db",
+      ENCRYPTION_KEY: "test_encryption_key_32_bytes_long_for_testing",
     },
     include: [
       "src/**/*.{test,spec}.{js,ts,jsx,tsx}",

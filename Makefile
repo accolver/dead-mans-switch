@@ -107,7 +107,7 @@ test:
 # Run database migrations
 migrate:
 	@echo "📊 Running database migrations..."
-	@node scripts/migrate.js
+	@cd frontend && npm run migrate
 	@echo "✅ Migrations complete"
 
 # Seed database with development data

@@ -24,6 +24,7 @@ const AUTH_ROUTES = [
  */
 function isPublicRoute(pathname: string): boolean {
   // Exact match for public routes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (PUBLIC_ROUTES.includes(pathname as any)) {
     return true;
   }
