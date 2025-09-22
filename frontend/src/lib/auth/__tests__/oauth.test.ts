@@ -22,7 +22,7 @@ describe('OAuth Service', () => {
     const result = await googleOAuthFlow({ redirectTo: '/dashboard' })
 
     expect(mockSignIn).toHaveBeenCalledWith('google', {
-      callbackUrl: '/auth/callback',
+      callbackUrl: '/dashboard',
       redirect: true,
       redirectTo: '/dashboard'
     })

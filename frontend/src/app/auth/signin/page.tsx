@@ -1,94 +1,91 @@
-"use client";
+"use client"
 
-import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { signIn } from "next-auth/react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { useState } from "react"
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const error = searchParams.get("error");
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+  const urlError = searchParams.get("error")
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleCredentialsSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setErrorMessage("")
 
     try {
-      const result = await signIn("email", {
+      const result = await signIn("credentials", {
         email,
+        password,
         redirect: false,
         callbackUrl,
-      });
+      })
 
       if (result?.error) {
-        console.error("Sign in error:", result.error);
-      } else {
-        setEmailSent(true);
+        setErrorMessage("Invalid email or password. Please try again.")
+      } else if (result?.ok) {
+        window.location.href = callbackUrl
       }
     } catch (error) {
-      console.error("Sign in error:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Sign in error:", error)
+      setErrorMessage("An unexpected error occurred. Please try again.")
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
+    setErrorMessage("")
     try {
-      await signIn("google", { callbackUrl });
+      await signIn("google", { callbackUrl })
+      // Don't reset loading state here - let the OAuth flow handle the redirect
+      // The loading state will persist until the user is redirected away
     } catch (error) {
-      console.error("Google sign in error:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Google sign in error:", error)
+      setErrorMessage("Google sign-in failed. Please try again.")
+      setIsLoading(false) // Only reset loading on actual error
     }
-  };
+  }
 
-  if (emailSent) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 px-4">
-        <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
-          <div className="text-center">
-            <div className="mx-auto h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <svg
-                className="h-8 w-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">Check your email</h2>
-            <p className="mt-2 text-gray-600">
-              We've sent a magic link to <strong>{email}</strong>
-            </p>
-            <p className="mt-4 text-sm text-gray-500">
-              Click the link in the email to sign in. The link will expire in 24 hours.
-            </p>
-            <button
-              onClick={() => setEmailSent(false)}
-              className="mt-6 text-indigo-600 hover:text-indigo-500 text-sm font-medium"
-            >
-              Try another email address
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  // Helper function to get user-friendly error messages
+  const getErrorMessage = (error: string | null, customError: string) => {
+    if (customError) return customError
+    if (!error) return null
+
+    switch (error) {
+      case "CredentialsSignin":
+        return "Invalid email or password. Please check your credentials and try again."
+      case "OAuthSignin":
+        return "Error connecting to sign-in provider. Please try again."
+      case "OAuthCallback":
+        return "Error during authentication. Please try again."
+      case "OAuthCreateAccount":
+        return "Could not create account. Please try again."
+      case "EmailCreateAccount":
+        return "Could not create email account. Please try again."
+      case "Callback":
+        return "Error in authentication callback. Please try again."
+      case "OAuthAccountNotLinked":
+        return "Account not linked. Please use the same sign-in method you used before."
+      case "EmailSignin":
+        return "Check your email address and try again."
+      case "SessionRequired":
+        return "Please sign in to access this page."
+      case "Default":
+      default:
+        return "Unable to sign in. Please try again."
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 px-4">
+      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign in to KeyFate
@@ -98,24 +95,20 @@ export default function SignInPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {error === "OAuthSignin" && "Error connecting to provider"}
-            {error === "OAuthCallback" && "Error during authentication"}
-            {error === "OAuthCreateAccount" && "Could not create account"}
-            {error === "EmailCreateAccount" && "Could not create email account"}
-            {error === "Callback" && "Error in authentication callback"}
-            {error === "OAuthAccountNotLinked" && "Account not linked. Please use the same sign-in method you used before."}
-            {error === "EmailSignin" && "Check your email address"}
-            {error === "Default" && "Unable to sign in"}
+        {getErrorMessage(urlError, errorMessage) && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {getErrorMessage(urlError, errorMessage)}
           </div>
         )}
 
         <div className="mt-8 space-y-6">
-          {/* Email Sign In */}
-          <form onSubmit={handleEmailSignIn} className="space-y-4">
+          {/* Credentials Sign In */}
+          <form onSubmit={handleCredentialsSignIn} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email address
               </label>
               <input
@@ -126,8 +119,29 @@ export default function SignInPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="relative mt-1 block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                 placeholder="you@example.com"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="relative mt-1 block w-full appearance-none rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                placeholder="Password"
                 disabled={isLoading}
               />
             </div>
@@ -135,9 +149,9 @@ export default function SignInPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative flex w-full justify-center rounded-lg border border-transparent bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-medium text-white hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isLoading ? "Sending..." : "Send magic link"}
+              {isLoading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
@@ -146,7 +160,9 @@ export default function SignInPage() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="bg-white px-2 text-gray-500">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -154,10 +170,10 @@ export default function SignInPage() {
           <button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg
-              className="w-5 h-5 mr-2"
+              className="mr-2 h-5 w-5"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
             >
@@ -183,17 +199,32 @@ export default function SignInPage() {
           </button>
         </div>
 
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Don't have an account?{" "}
+            <Link
+              href={`/auth/signup${callbackUrl !== "/dashboard" ? `?next=${encodeURIComponent(callbackUrl)}` : ""}`}
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              Sign up
+            </Link>
+          </p>
+        </div>
+
         <p className="mt-4 text-center text-xs text-gray-500">
           By signing in, you agree to our{" "}
           <Link href="/terms" className="text-indigo-600 hover:text-indigo-500">
             Terms of Service
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="text-indigo-600 hover:text-indigo-500">
+          <Link
+            href="/privacy"
+            className="text-indigo-600 hover:text-indigo-500"
+          >
             Privacy Policy
           </Link>
         </p>
       </div>
     </div>
-  );
+  )
 }

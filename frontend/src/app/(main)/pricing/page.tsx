@@ -2,7 +2,7 @@ import { StaticPricingPage } from "@/components/subscription/StaticPricingPage"
 import { PricingPage } from "@/components/subscription/PricingPage"
 import { NavBar } from "@/components/nav-bar"
 import { Footer } from "@/components/footer"
-import { createClient } from "@/utils/supabase/server"
+// import { createClient } from "@/utils/supabase/server"
 
 export default async function Pricing() {
   const supabase = await createClient()

@@ -13,13 +13,12 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   },
-  // Temporarily ignore TypeScript and ESLint errors during build
-  // TODO: Fix TypeScript errors and remove this configuration
+  // TypeScript and ESLint errors will be checked during build
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 };
 

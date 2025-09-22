@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { getServerSession } from 'next-auth/next'
 import { redirect } from 'next/navigation'
+import { getUserById } from '@/lib/auth/users'
 
 // Mock NextAuth JWT and server session
 vi.mock('next-auth/jwt', () => ({
@@ -11,6 +12,10 @@ vi.mock('next-auth/jwt', () => ({
 
 vi.mock('next-auth/next', () => ({
   getServerSession: vi.fn()
+}))
+
+vi.mock('@/lib/auth/users', () => ({
+  getUserById: vi.fn()
 }))
 
 vi.mock('next/navigation', () => ({
@@ -36,6 +41,7 @@ vi.mock('next/server', () => ({
 
 const mockGetToken = getToken as any
 const mockGetServerSession = getServerSession as any
+const mockGetUserById = vi.mocked(getUserById)
 const mockRedirect = redirect as any
 
 describe('Complete Redirect Loop Solution Tests', () => {
@@ -71,6 +77,15 @@ describe('Complete Redirect Loop Solution Tests', () => {
       // Both middleware (JWT) and layout (server session) use the same session
       mockGetToken.mockResolvedValue(userSession)
       mockGetServerSession.mockResolvedValue(userSession)
+
+      // User exists in database
+      const mockUser = {
+        id: 'user123',
+        email: 'user@example.com',
+        name: 'Test User',
+        emailVerified: new Date()
+      }
+      mockGetUserById.mockResolvedValue(mockUser)
 
       const { middleware } = await import('@/middleware')
 

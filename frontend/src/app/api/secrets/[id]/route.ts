@@ -1,6 +1,8 @@
-import { createClient } from "@/utils/supabase/server";
+import { secretsService } from "@/lib/db/drizzle";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getServerSession } from "next-auth/next";
+import { authConfig } from "@/lib/auth-config";
 
 export async function GET(
   request: Request,
@@ -8,24 +10,16 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    
+    // Use NextAuth for authentication
+    const session = await getServerSession(authConfig as any);
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: secret, error } = await supabase
-      .from("secrets")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .single();
+    const secret = await secretsService.getById(id, session.user.id);
 
-    if (error || !secret) {
+    if (!secret) {
       return NextResponse.json({ error: "Secret not found" }, { status: 404 });
     }
 
@@ -55,33 +49,30 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    
+    // Use NextAuth for authentication
+    const session = await getServerSession(authConfig as any);
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
     const validatedData = updateSecretSchema.parse(body);
 
-    const { data: secret, error: updateError } = await supabase
-      .from("secrets")
-      .update(validatedData)
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .select()
-      .single();
+    // Map the validated data to the database schema
+    const updateData = {
+      title: validatedData.title,
+      recipientName: validatedData.recipient_name,
+      recipientEmail: validatedData.recipient_email || null,
+      recipientPhone: validatedData.recipient_phone || null,
+      contactMethod: validatedData.contact_method,
+      checkInDays: validatedData.check_in_days,
+    };
 
-    if (updateError) {
-      console.error("Error updating secret:", updateError);
-      return NextResponse.json(
-        { error: "Failed to update secret" },
-        { status: 500 },
-      );
+    const secret = await secretsService.update(id, updateData);
+
+    if (!secret) {
+      return NextResponse.json({ error: "Secret not found" }, { status: 404 });
     }
 
     return NextResponse.json(secret);
@@ -107,42 +98,22 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    
+    // Use NextAuth for authentication
+    const session = await getServerSession(authConfig as any);
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // First verify the secret exists and belongs to the user
-    const { data: secret, error: fetchError } = await supabase
-      .from("secrets")
-      .select("id")
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .single();
+    const secret = await secretsService.getById(id, session.user.id);
 
-    if (fetchError || !secret) {
+    if (!secret) {
       return NextResponse.json({ error: "Secret not found" }, { status: 404 });
     }
 
-    // Delete the secret (RLS policies ensure user can only delete their own secrets)
-    const { error: deleteError } = await supabase
-      .from("secrets")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.id);
-
-    if (deleteError) {
-      console.error("Error deleting secret:", deleteError);
-      return NextResponse.json(
-        { error: "Failed to delete secret" },
-        { status: 500 },
-      );
-    }
+    // Delete the secret
+    await secretsService.delete(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -11,58 +11,23 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { NEXT_PUBLIC_COMPANY } from "@/lib/env"
-import { createClient } from "@/utils/supabase/client"
 import { Menu } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
-import { useEffect, useState } from "react"
-
-const supabase = createClient()
+import { useState } from "react"
 
 export function NavBar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [isProUser, setIsProUser] = useState(false)
-  const [checkingSubscription, setCheckingSubscription] = useState(false)
 
-  const user = session?.user
+  const user = session?.user as { id?: string; name?: string; email?: string; image?: string } | undefined
   const loading = status === "loading"
 
-  // Check subscription status when user changes
-  useEffect(() => {
-    const checkSubscriptionStatus = async () => {
-      if (!user?.id) {
-        setIsProUser(false)
-        return
-      }
-
-      setCheckingSubscription(true)
-      try {
-        const { data: tier } = await supabase
-          .from("user_tiers")
-          .select(
-            `
-            tier_id,
-            tiers!inner(name)
-          `,
-          )
-          .eq("user_id", user.id)
-          .maybeSingle()
-
-        // If no tier exists, assume free tier
-        setIsProUser(tier?.tiers?.name === "pro")
-      } catch (error) {
-        console.error("Error checking subscription status:", error)
-        setIsProUser(false)
-      } finally {
-        setCheckingSubscription(false)
-      }
-    }
-
-    checkSubscriptionStatus()
-  }, [user?.id])
+  // For now, assume all users are free tier until we implement proper subscription checking
+  const isProUser = false
+  const checkingSubscription = false
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/sign-in" })

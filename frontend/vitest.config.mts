@@ -19,11 +19,15 @@ export default defineConfig({
       // Google OAuth test configuration
       GOOGLE_CLIENT_ID: "test-client-id.apps.googleusercontent.com",
       GOOGLE_CLIENT_SECRET: "test-client-secret",
-      NEXTAUTH_SECRET: "test-nextauth-secret",
+      NEXTAUTH_SECRET: "test-nextauth-secret-32-chars-l",
       NEXTAUTH_URL: "http://localhost:3000",
       // Database configuration for tests
       DATABASE_URL: "postgresql://postgres:test_password@localhost:5432/test_db",
       ENCRYPTION_KEY: "test_encryption_key_32_bytes_long_for_testing",
+      // Explicitly unset Supabase environment variables
+      NEXT_PUBLIC_SUPABASE_URL: undefined,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: undefined,
+      SUPABASE_SERVICE_ROLE_KEY: undefined,
     },
     include: [
       "src/**/*.{test,spec}.{js,ts,jsx,tsx}",
@@ -31,10 +35,11 @@ export default defineConfig({
     ],
     // Suppress React act() warnings and API error logs in tests
     onConsoleLog(log, type) {
+      // Suppress all React act() warnings
       if (
-        log.includes(
-          "Warning: An update to TestComponent inside a test was not wrapped in act",
-        )
+        log.includes("Warning: An update to") ||
+        log.includes("inside a test was not wrapped in act") ||
+        log.includes("The current testing environment is not configured to support act")
       ) {
         return false;
       }

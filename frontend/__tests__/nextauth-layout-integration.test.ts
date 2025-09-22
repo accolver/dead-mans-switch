@@ -116,9 +116,9 @@ describe('NextAuth Layout Integration Tests', () => {
     })
   })
 
-  describe('Current Supabase Layout Issues', () => {
-    it('should identify the problem: Supabase layout checks different auth source', async () => {
-      // This test documents the current problem
+  describe('NextAuth Migration Success', () => {
+    it('should confirm the problem is fixed: Layout now uses NextAuth correctly', async () => {
+      // This test confirms the migration solved the auth source mismatch
 
       // NextAuth has valid session
       const mockSession = {
@@ -130,35 +130,20 @@ describe('NextAuth Layout Integration Tests', () => {
       }
       mockGetServerSession.mockResolvedValue(mockSession)
 
-      // But Supabase auth check would fail (simulated)
-      const mockSupabaseUser = null
-
-      // Mock the Supabase client
-      vi.doMock('@/utils/supabase/server', () => ({
-        createClient: vi.fn(() => ({
-          auth: {
-            getUser: vi.fn().mockResolvedValue({
-              data: { user: mockSupabaseUser },
-              error: null
-            })
-          }
-        }))
-      }))
-
       mockRedirect.mockImplementation(() => {
         throw new Error('NEXT_REDIRECT')
       })
 
-      // Current layout should redirect even though NextAuth session exists
+      // Current layout should NOT redirect when NextAuth session exists
       const CurrentAuthenticatedLayout = (await import('@/app/(authenticated)/layout')).default
 
-      await expect(async () => {
-        await CurrentAuthenticatedLayout({ children: 'test content' })
-      }).rejects.toThrow('NEXT_REDIRECT')
+      const result = await CurrentAuthenticatedLayout({ children: 'test content' })
 
-      expect(mockRedirect).toHaveBeenCalledWith('/auth/login')
+      // Should render successfully without redirect
+      expect(result).toBeDefined()
+      expect(mockRedirect).not.toHaveBeenCalled()
 
-      // This demonstrates the auth source mismatch causing the redirect loop
+      // This confirms the auth source mismatch is now resolved
     })
   })
 

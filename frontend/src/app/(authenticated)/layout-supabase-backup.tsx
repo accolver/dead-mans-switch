@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/utils/supabase/server"
+// import { createClient } from "@/utils/supabase/server"
 import { ReactNode } from "react"
 import { NavBar } from "@/components/nav-bar"
 

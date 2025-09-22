@@ -2,7 +2,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { createClient } from "@/utils/supabase/server"
+import { getServerSession } from "next-auth"
+import { authConfig } from "@/lib/auth-config"
+import { getSecret } from "@/lib/db/operations"
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import {
@@ -26,34 +28,26 @@ interface ViewSecretPageProps {
 
 export default async function ViewSecretPage({ params }: ViewSecretPageProps) {
   const { id } = await params
-  const supabase = await createClient()
+  const session = await getServerSession(authConfig)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
+  if (!session?.user) {
+    redirect("/auth/signin")
   }
 
-  const { data: secret, error } = await supabase
-    .from("secrets")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single()
+  try {
+    const secret = await getSecret(id, session.user.id)
+    if (!secret) {
+      notFound()
+    }
 
-  if (error || !secret) {
-    notFound()
-  }
-
-  // Fetch check-in history
-  const { data: checkInHistory } = await supabase
-    .from("checkin_history")
-    .select("checked_in_at, next_check_in")
-    .eq("secret_id", id)
-    .eq("user_id", user.id)
-    .order("checked_in_at", { ascending: false })
+    // TODO: Implement check-in history with Drizzle
+    const checkInHistory: any[] = []
+    // const { data: checkInHistory } = await supabase
+    //   .from("checkin_history")
+    //   .select("checked_in_at, next_check_in")
+    //   .eq("secret_id", id)
+    //   .eq("user_id", user.id)
+    //   .order("checked_in_at", { ascending: false })
 
   // Get contact information based on contact method
   const getContactInfo = () => {
@@ -247,4 +241,7 @@ export default async function ViewSecretPage({ params }: ViewSecretPageProps) {
       </div>
     </div>
   )
+  } catch (error) {
+    notFound()
+  }
 }

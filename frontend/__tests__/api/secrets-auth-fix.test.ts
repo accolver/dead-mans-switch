@@ -25,16 +25,25 @@ vi.mock('@/lib/schemas/secret', () => ({
   }
 }))
 
+// Mock Drizzle service
+vi.mock('@/lib/db/drizzle', () => ({
+  secretsService: {
+    create: vi.fn()
+  }
+}))
+
 import { getServerSession } from 'next-auth/next'
 import { createClient, createServiceRoleClient } from '@/utils/supabase/server'
 import { encryptMessage } from '@/lib/encryption'
 import { secretSchema } from '@/lib/schemas/secret'
+import { secretsService } from '@/lib/db/drizzle'
 
 const mockGetServerSession = getServerSession as any
 const mockCreateClient = createClient as any
 const mockCreateServiceRoleClient = createServiceRoleClient as any
 const mockEncryptMessage = encryptMessage as any
 const mockSecretSchema = secretSchema as any
+const mockSecretsService = secretsService as any
 
 describe('Secrets API Authentication Fix', () => {
   beforeEach(() => {
@@ -65,25 +74,12 @@ describe('Secrets API Authentication Fix', () => {
         authTag: 'test-auth-tag'
       })
 
-      // Mock Supabase admin client for database operations
-      const mockSupabaseAdmin = {
-        from: vi.fn(() => ({
-          insert: vi.fn(() => ({
-            select: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({
-                data: {
-                  id: 'secret-123',
-                  title: 'Test Secret',
-                  user_id: 'nextauth-user-123'
-                },
-                error: null
-              })
-            }))
-          }))
-        })),
-        rpc: vi.fn().mockResolvedValue({ error: null })
-      }
-      mockCreateServiceRoleClient.mockReturnValue(mockSupabaseAdmin)
+      // Mock secrets service for database operations
+      mockSecretsService.create.mockResolvedValue({
+        id: 'secret-123',
+        title: 'Test Secret',
+        userId: 'nextauth-user-123'
+      })
 
       const validSecretData = {
         title: 'Test Secret',
@@ -107,6 +103,12 @@ describe('Secrets API Authentication Fix', () => {
 
       const response = await POST(request)
       const result = await response.json()
+
+      // Debug the actual response
+      if (response.status !== 200) {
+        console.log('Test 1 - Error response status:', response.status)
+        console.log('Test 1 - Error response body:', result)
+      }
 
       // With NextAuth fix, should succeed
       expect(response.status).toBe(200)
@@ -134,25 +136,12 @@ describe('Secrets API Authentication Fix', () => {
         authTag: 'test-auth-tag'
       })
 
-      // Mock Supabase admin client for database operations
-      const mockSupabaseAdmin = {
-        from: vi.fn(() => ({
-          insert: vi.fn(() => ({
-            select: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({
-                data: {
-                  id: 'secret-123',
-                  title: 'Test Secret',
-                  user_id: 'nextauth-user-123'
-                },
-                error: null
-              })
-            }))
-          }))
-        })),
-        rpc: vi.fn().mockResolvedValue({ error: null })
-      }
-      mockCreateServiceRoleClient.mockReturnValue(mockSupabaseAdmin)
+      // Mock secrets service for database operations
+      mockSecretsService.create.mockResolvedValue({
+        id: 'secret-123',
+        title: 'Test Secret',
+        userId: 'nextauth-user-123'
+      })
 
       const validSecretData = {
         title: 'Test Secret',
@@ -181,8 +170,10 @@ describe('Secrets API Authentication Fix', () => {
       expect(response.status).toBe(200)
       expect(result.secretId).toBe('secret-123')
 
-      // Verify NextAuth session was used by checking the response includes the user data
-      expect(mockSupabaseAdmin.from).toHaveBeenCalledWith('secrets')
+      // Verify secrets service was used for database operations
+      expect(mockSecretsService.create).toHaveBeenCalledWith(expect.objectContaining({
+        userId: 'nextauth-user-123'
+      }))
     })
 
     it('should return 401 when no NextAuth session exists', async () => {
@@ -267,25 +258,12 @@ describe('Secrets API Authentication Fix', () => {
         authTag: 'test-auth-tag'
       })
 
-      // Mock successful database operation
-      const mockSupabaseAdmin = {
-        from: vi.fn(() => ({
-          insert: vi.fn(() => ({
-            select: vi.fn(() => ({
-              single: vi.fn().mockResolvedValue({
-                data: {
-                  id: 'secret-123',
-                  title: 'My Important Secret',
-                  user_id: 'nextauth-user-123'
-                },
-                error: null
-              })
-            }))
-          }))
-        })),
-        rpc: vi.fn().mockResolvedValue({ error: null })
-      }
-      mockCreateServiceRoleClient.mockReturnValue(mockSupabaseAdmin)
+      // Mock secrets service for database operations
+      mockSecretsService.create.mockResolvedValue({
+        id: 'secret-123',
+        title: 'My Important Secret',
+        userId: 'nextauth-user-123'
+      })
 
       const formData = {
         title: 'My Important Secret',

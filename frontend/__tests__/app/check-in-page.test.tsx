@@ -23,8 +23,10 @@ describe("CheckInPage", () => {
     global.fetch = vi.fn()
   })
 
-  it("renders check-in form with token", () => {
-    render(<CheckInPage />)
+  it("renders check-in form with token", async () => {
+    await act(async () => {
+      render(<CheckInPage />)
+    })
 
     expect(screen.getByText("Secret Check-In")).toBeInTheDocument()
     expect(screen.getByText("Check In Now")).toBeInTheDocument()
@@ -51,7 +53,9 @@ describe("CheckInPage", () => {
 
     global.fetch = vi.fn().mockResolvedValue(mockResponse)
 
-    render(<CheckInPage />)
+    await act(async () => {
+      render(<CheckInPage />)
+    })
 
     const checkInButton = screen.getByText("Check In Now")
 
@@ -87,7 +91,9 @@ describe("CheckInPage", () => {
 
     global.fetch = vi.fn().mockResolvedValue(mockResponse)
 
-    render(<CheckInPage />)
+    await act(async () => {
+      render(<CheckInPage />)
+    })
 
     const checkInButton = screen.getByText("Check In Now")
 
@@ -108,7 +114,9 @@ describe("CheckInPage", () => {
   it("handles network errors", async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error("Network error"))
 
-    render(<CheckInPage />)
+    await act(async () => {
+      render(<CheckInPage />)
+    })
 
     const checkInButton = screen.getByText("Check In Now")
 
@@ -135,7 +143,9 @@ describe("CheckInPage", () => {
 
     global.fetch = vi.fn().mockReturnValue(loadingPromise)
 
-    render(<CheckInPage />)
+    await act(async () => {
+      render(<CheckInPage />)
+    })
 
     const checkInButton = screen.getByText("Check In Now")
 
@@ -150,6 +160,8 @@ describe("CheckInPage", () => {
     })
 
     // Resolve the promise to clean up
-    resolvePromise!({ ok: true, json: () => Promise.resolve({}) })
+    await act(async () => {
+      resolvePromise!({ ok: true, json: () => Promise.resolve({}) })
+    })
   })
 })

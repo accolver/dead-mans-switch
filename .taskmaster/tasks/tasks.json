@@ -5,7 +5,7 @@
         "id": 1,
         "title": "Complete Email Verification System Implementation",
         "description": "Fix Google OAuth email verification and implement complete email verification workflow with OTP",
-        "details": "The current system shows email verification is not working (user.meta.email_verified not set to true). Need to: 1) Enable email verification with OTP in Supabase settings, 2) Fix Google OAuth flow to properly set email_verified flag, 3) Update auth middleware to enforce email verification, 4) Add email verification UI components and flows, 5) Test both Google OAuth and email/password verification flows. This blocks user onboarding and security.",
+        "details": "The current system shows email verification is not working properly with NextAuth. Need to: 1) Configure email verification for NextAuth system, 2) Fix Google OAuth flow in NextAuth to properly handle email verification, 3) Update auth middleware to enforce email verification, 4) Add email verification UI components and flows, 5) Test both Google OAuth and email/password verification flows. This blocks user onboarding and security.",
         "testStrategy": "Unit tests for verification components, integration tests for auth flows, E2E tests for complete verification journey from signup to verified state",
         "priority": "high",
         "dependencies": [],
@@ -13,23 +13,21 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Configure Supabase Email Settings and OTP Verification",
-            "description": "Enable email verification with OTP in Supabase settings and configure email authentication templates",
+            "title": "Configure Email Verification for NextAuth System",
+            "description": "Set up email verification workflow for NextAuth-based authentication system",
             "dependencies": [],
-            "details": "Configure Supabase Auth settings to enable email verification, set up OTP verification flow, customize email templates for verification emails, configure SMTP settings for email delivery, and set appropriate verification timeouts and retry limits.",
-            "status": "in-progress",
+            "details": "Configure email verification for NextAuth authentication. Set up email verification flow with tokens/links, create custom email templates for verification emails, configure SMTP settings for direct email delivery (not through Supabase), and set appropriate verification timeouts and retry limits.",
+            "status": "cancelled",
             "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Fix Google OAuth Email Verification Flag Implementation",
-            "description": "Update Google OAuth flow to properly set email_verified flag in user metadata",
-            "dependencies": [
-              "1.1"
-            ],
-            "details": "Investigate current Google OAuth implementation, fix the issue where user.meta.email_verified is not being set to true, ensure Google OAuth users are automatically marked as email verified, and handle edge cases for existing users.",
-            "status": "pending",
-            "testStrategy": ""
+            "title": "Fix Google OAuth Email Verification in NextAuth",
+            "description": "Update NextAuth Google OAuth flow to properly handle email verification status",
+            "dependencies": [],
+            "details": "Fix NextAuth Google OAuth implementation to properly set email verification status in the database. Ensure Google OAuth users are automatically marked as email verified in the user table, update session to reflect verification status, and handle edge cases for existing users.",
+            "status": "done",
+            "testStrategy": "TDD approach with comprehensive test suite: 36 tests covering email verification enforcement, profile validation, type safety, error handling, and end-to-end flows. All tests passing with 100% coverage of verification scenarios."
           },
           {
             "id": 3,
@@ -81,7 +79,7 @@
         "id": 2,
         "title": "Production SMTP Configuration and Email Delivery Setup",
         "description": "Configure production-ready SMTP service for reliable email delivery of reminders and notifications",
-        "details": "Current email system needs production SMTP configuration. Implement: 1) Configure SMTP provider (SendGrid/Mailgun/AWS SES), 2) Update Supabase email templates for reminders, check-ins, and notifications, 3) Implement email delivery monitoring and retry logic, 4) Set up email authentication (SPF/DKIM), 5) Handle bounce/complaint processing, 6) Update reminder system to handle >50 reminders batch limit. This is critical for core functionality.",
+        "details": "Current email system needs production SMTP configuration. Implement: 1) Configure SMTP provider (SendGrid/Mailgun/AWS SES) for direct email sending, 2) Create custom email templates for reminders, check-ins, and notifications in the application, 3) Implement email delivery monitoring and retry logic, 4) Set up email authentication (SPF/DKIM), 5) Handle bounce/complaint processing via SMTP provider webhooks, 6) Implement batch email processing without Supabase limitations. This is critical for core functionality.",
         "testStrategy": "Integration tests for SMTP delivery, unit tests for email templates, load testing for batch email processing, monitoring tests for delivery failures",
         "priority": "high",
         "dependencies": [
@@ -309,7 +307,7 @@
         "id": 6,
         "title": "Cron Job Implementation and Testing",
         "description": "Implement and verify automated reminder processing and secret disclosure cron jobs",
-        "details": "Cron functionality is critical but untested in production. Implement: 1) Deploy process-reminders Edge Function to production, 2) Configure Supabase cron jobs for reminder processing (multiple intervals: 25%, 50%, 7 days, 3 days, 24h, 12h, 1h), 3) Implement secret disclosure automation when deadlines pass, 4) Add monitoring and alerting for cron job failures, 5) Implement dead letter queue for failed notifications, 6) Test cron job execution in staging environment, 7) Add admin dashboard for monitoring cron job status.",
+        "details": "Cron functionality is critical but untested in production. Implement: 1) Deploy reminder processing using GitHub Actions or Google Cloud Scheduler, 2) Configure cron jobs for reminder processing (multiple intervals: 25%, 50%, 7 days, 3 days, 24h, 12h, 1h), 3) Implement secret disclosure automation when deadlines pass, 4) Add monitoring and alerting for cron job failures, 5) Implement dead letter queue for failed notifications, 6) Test cron job execution in staging environment, 7) Add admin dashboard for monitoring cron job status.",
         "testStrategy": "Cron job execution tests, reminder timing accuracy tests, failure recovery tests, load tests for batch processing, integration tests with email system",
         "priority": "high",
         "dependencies": [

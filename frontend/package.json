@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
@@ -30,7 +31,10 @@
     "db:pool:stop": "docker-compose -f docker-compose.pooling.yml down",
     "db:pool:logs": "docker-compose -f docker-compose.pooling.yml logs -f",
     "setup:cloud-sql": "./scripts/setup-cloud-sql.sh",
-    "setup:security": "./scripts/configure-cloud-sql-security.sh"
+    "setup:security": "./scripts/configure-cloud-sql-security.sh",
+    "debug:build": "node scripts/debug-build.js",
+    "test:build": "vitest run __tests__/build-configuration.test.ts",
+    "test:turbopack": "vitest run __tests__/turbopack-runtime.test.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.10.0",
@@ -48,9 +52,9 @@
     "@radix-ui/react-tooltip": "^1.1.4",
     "@remixicon/react": "^4.5.0",
     "@stripe/stripe-js": "^5.2.0",
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.46.2",
+    "@types/bcryptjs": "^3.0.0",
     "@types/nodemailer": "^7.0.1",
+    "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.36.4",

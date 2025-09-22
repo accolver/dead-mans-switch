@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { getUserById } from '@/lib/auth/users'
 
 // Mock NextAuth JWT
 vi.mock('next-auth/jwt', () => ({
   getToken: vi.fn()
+}))
+
+// Mock auth users module
+vi.mock('@/lib/auth/users', () => ({
+  getUserById: vi.fn()
 }))
 
 // Mock Next.js server functions
@@ -17,6 +23,7 @@ vi.mock('next/server', () => ({
 }))
 
 const mockGetToken = getToken as any
+const mockGetUserById = vi.mocked(getUserById)
 
 describe('OAuth Redirect Loop Integration Tests', () => {
   let mockRedirectResponse: any
@@ -51,11 +58,27 @@ describe('OAuth Redirect Loop Integration Tests', () => {
       }
       mockGetToken.mockResolvedValue(mockToken)
 
+      // 2. User exists in database
+      const mockUser = {
+        id: 'user123',
+        email: 'user@example.com',
+        name: 'Test User',
+        emailVerified: new Date()
+      }
+      mockGetUserById.mockResolvedValue(mockUser)
+
       const { middleware } = await import('@/middleware')
 
       // 2. User visits /dashboard - middleware should allow access
+      const dashboardUrl = new URL('http://localhost:3000/dashboard')
+      dashboardUrl.clone = () => {
+        const cloned = new URL(dashboardUrl.href)
+        cloned.clone = dashboardUrl.clone
+        return cloned
+      }
+
       let mockRequest = {
-        nextUrl: { pathname: '/dashboard' }
+        nextUrl: dashboardUrl
       } as NextRequest
 
       let result = await middleware(mockRequest)
@@ -94,11 +117,27 @@ describe('OAuth Redirect Loop Integration Tests', () => {
       }
       mockGetToken.mockResolvedValue(mockToken)
 
+      // User exists in database
+      const mockUser = {
+        id: 'user123',
+        email: 'user@example.com',
+        name: 'Test User',
+        emailVerified: new Date()
+      }
+      mockGetUserById.mockResolvedValue(mockUser)
+
       const { middleware } = await import('@/middleware')
 
       // 1. OAuth callback should be allowed
+      const callbackUrl = new URL('http://localhost:3000/api/auth/callback/google')
+      callbackUrl.clone = () => {
+        const cloned = new URL(callbackUrl.href)
+        cloned.clone = callbackUrl.clone
+        return cloned
+      }
+
       let mockRequest = {
-        nextUrl: { pathname: '/api/auth/callback/google' }
+        nextUrl: callbackUrl
       } as NextRequest
 
       let result = await middleware(mockRequest)
@@ -108,8 +147,15 @@ describe('OAuth Redirect Loop Integration Tests', () => {
       expect(result).toBe(mockNextResponse)
 
       // 2. After callback, user can access protected routes
+      const dashboardUrl2 = new URL('http://localhost:3000/dashboard')
+      dashboardUrl2.clone = () => {
+        const cloned = new URL(dashboardUrl2.href)
+        cloned.clone = dashboardUrl2.clone
+        return cloned
+      }
+
       mockRequest = {
-        nextUrl: { pathname: '/dashboard' }
+        nextUrl: dashboardUrl2
       } as NextRequest
 
       result = await middleware(mockRequest)

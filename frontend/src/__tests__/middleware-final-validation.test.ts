@@ -67,7 +67,7 @@ describe('Middleware Final Validation', () => {
 
     // Verify proper middleware config structure
     expect(config.matcher).toEqual([
-      '/((?!api|_next/static|_next/image|favicon.ico).*)',
+      '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
     ]);
   });
 });

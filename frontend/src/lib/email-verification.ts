@@ -1,13 +1,18 @@
-import { createClient } from '@/utils/supabase/client'
-import type { User } from '@supabase/supabase-js'
+// import { createClient } from '@/utils/supabase/client'
+// import type { User } from '@supabase/supabase-js'
 
-interface SupabaseUser extends User {
+// TODO: Replace with NextAuth types
+interface NextAuthUser {
+  id: string
+  email?: string
+  name?: string
+  image?: string
   email_verified?: boolean
 }
 
 export interface EmailVerificationResult {
   success: boolean
-  user?: User
+  user?: NextAuthUser
   error?: string
   alreadyVerified?: boolean
   requiresVerification?: boolean
@@ -15,40 +20,22 @@ export interface EmailVerificationResult {
 
 export interface EmailVerificationStatus {
   isVerified: boolean
-  user?: User | null
+  user?: NextAuthUser | null
   error?: string | null
 }
 
 /**
  * Verify email address using OTP code
+ * TODO: Implement with NextAuth email verification
  */
 export async function verifyEmailWithOTP(email: string, otp: string): Promise<EmailVerificationResult> {
   try {
-    const supabase = createClient()
-
-    const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'email'
-    })
-
-    if (error) {
-      return {
-        success: false,
-        error: error.message
-      }
-    }
-
-    if (data.user) {
-      return {
-        success: true,
-        user: data.user
-      }
-    }
+    // TODO: Replace with NextAuth email verification
+    console.warn("[Email Verification] verifyEmailWithOTP is deprecated - use NextAuth instead");
 
     return {
       success: false,
-      error: 'Verification failed'
+      error: 'Function deprecated - use NextAuth email verification'
     }
   } catch {
     return {
@@ -60,195 +47,89 @@ export async function verifyEmailWithOTP(email: string, otp: string): Promise<Em
 
 /**
  * Send OTP verification code to email
+ * TODO: Implement with NextAuth email verification
  */
 export async function sendVerificationOTP(email: string): Promise<EmailVerificationResult> {
   try {
-    const supabase = createClient()
-
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email
-    })
-
-    if (error) {
-      return {
-        success: false,
-        error: error.message
-      }
-    }
+    // TODO: Replace with NextAuth email provider
+    console.warn("[Email Verification] sendVerificationOTP is deprecated - use NextAuth instead");
 
     return {
-      success: true
+      success: false,
+      error: 'Function deprecated - use NextAuth email verification'
     }
   } catch {
     return {
       success: false,
-      error: 'Failed to send verification email'
+      error: 'An unexpected error occurred during verification'
     }
   }
 }
 
 /**
- * Check current user's email verification status
+ * Get current email verification status
+ * TODO: Implement with NextAuth session
  */
-export async function checkEmailVerificationStatus(): Promise<EmailVerificationStatus> {
+export async function getEmailVerificationStatus(): Promise<EmailVerificationStatus> {
   try {
-    const supabase = createClient()
+    // TODO: Replace with NextAuth session check
+    console.warn("[Email Verification] getEmailVerificationStatus is deprecated - use NextAuth instead");
 
-    const { data, error } = await supabase.auth.getUser()
-
-    if (error) {
-      return {
-        isVerified: false,
-        error: error.message
-      }
-    }
-
-    if (!data.user) {
-      return {
-        isVerified: false,
-        user: null
-      }
-    }
-
-    const user = data.user as SupabaseUser
     return {
-      isVerified: user.email_verified || false,
-      user: user,
-      error: null
+      isVerified: false,
+      user: null,
+      error: 'Function deprecated - use NextAuth session'
     }
   } catch {
     return {
       isVerified: false,
-      error: 'Failed to check verification status'
+      user: null,
+      error: 'An unexpected error occurred'
     }
   }
 }
 
 /**
- * Handle OAuth user email verification
- * Google and other trusted providers should be automatically verified
+ * Check if user needs email verification
+ * TODO: Implement with NextAuth session
  */
-export async function handleOAuthEmailVerification(user: User): Promise<EmailVerificationResult> {
+export async function checkEmailVerificationRequired(user?: NextAuthUser): Promise<boolean> {
+  // TODO: Replace with NextAuth logic
+  console.warn("[Email Verification] checkEmailVerificationRequired is deprecated - use NextAuth instead");
+  return false;
+}
+
+/**
+ * Mark email as verified in database
+ * TODO: Implement with NextAuth callbacks
+ */
+export async function markEmailVerified(userId: string): Promise<boolean> {
   try {
-    const supabase = createClient()
-    const supabaseUser = user as SupabaseUser
-    const provider = user.app_metadata?.provider
-
-    // If user is already verified, skip
-    if (supabaseUser.email_verified) {
-      return {
-        success: true,
-        user,
-        alreadyVerified: true
-      }
-    }
-
-    // For trusted OAuth providers (Google, etc.), automatically verify
-    if (provider === 'google' || provider === 'github' || provider === 'apple') {
-      const { data, error } = await supabase.auth.updateUser({
-        data: { email_verified: true }
-      })
-
-      if (error) {
-        return {
-          success: false,
-          error: error.message
-        }
-      }
-
-      return {
-        success: true,
-        user: data.user
-      }
-    }
-
-    // For email/password users, verification is required
-    if (provider === 'email') {
-      return {
-        success: true,
-        requiresVerification: true,
-        user
-      }
-    }
-
-    // For other providers, default to requiring verification
-    return {
-      success: true,
-      requiresVerification: true,
-      user
-    }
+    // TODO: Replace with NextAuth database update
+    console.warn("[Email Verification] markEmailVerified is deprecated - use NextAuth callbacks");
+    return false;
   } catch {
-    return {
-      success: false,
-      error: 'Failed to handle OAuth verification'
-    }
+    return false;
   }
 }
 
 /**
  * Resend verification email
+ * TODO: Implement with NextAuth email provider
  */
 export async function resendVerificationEmail(email: string): Promise<EmailVerificationResult> {
   try {
-    const supabase = createClient()
-
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email
-    })
-
-    if (error) {
-      return {
-        success: false,
-        error: error.message
-      }
-    }
+    // TODO: Replace with NextAuth email resend
+    console.warn("[Email Verification] resendVerificationEmail is deprecated - use NextAuth instead");
 
     return {
-      success: true
+      success: false,
+      error: 'Function deprecated - use NextAuth email verification'
     }
   } catch {
     return {
       success: false,
-      error: 'Failed to resend verification email'
+      error: 'An unexpected error occurred during resend'
     }
-  }
-}
-
-/**
- * Check if a user requires email verification based on their provider
- */
-export function requiresEmailVerification(user: User): boolean {
-  const supabaseUser = user as SupabaseUser
-  if (supabaseUser.email_verified) {
-    return false
-  }
-
-  const provider = user.app_metadata?.provider
-
-  // Trusted OAuth providers don't require manual verification
-  if (provider === 'google' || provider === 'github' || provider === 'apple') {
-    return false
-  }
-
-  // Email/password and other providers require verification
-  return true
-}
-
-/**
- * Get verification requirements for a user
- */
-export function getVerificationRequirements(user: User) {
-  const supabaseUser = user as SupabaseUser
-  const provider = user.app_metadata?.provider
-  const isVerified = supabaseUser.email_verified
-  const needsVerification = requiresEmailVerification(user)
-
-  return {
-    provider,
-    isVerified,
-    needsVerification,
-    canAutoVerify: provider === 'google' || provider === 'github' || provider === 'apple'
   }
 }

@@ -76,7 +76,7 @@ export default function AuthErrorPage() {
 
           <div className="space-y-3">
             <Link
-              href="/auth/signin"
+              href="/sign-in"
               className="block w-full py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Try signing in again

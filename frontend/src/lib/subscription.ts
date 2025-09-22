@@ -5,7 +5,8 @@ import {
   TierLimits,
   UserTierInfo,
 } from "../types/subscription";
-import { supabase } from "./supabase";
+import { db } from "./db/drizzle";
+import { users, userSubscriptions } from "./db/schema";
 
 // Get current user's tier information with usage and limits
 export async function getUserTierInfo(

@@ -2,41 +2,24 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/utils/supabase/client"
-import { User } from "@supabase/supabase-js"
+import { useSession, signIn, signOut } from "next-auth/react"
 import { useEffect, useState } from "react"
 import { StripeCheckoutButton } from "@/components/subscription/StripeCheckoutButton"
 
-const supabase = createClient()
-
 export default function TestCheckoutPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
-    }
-    getUser()
-  }, [])
+  const { data: session, status } = useSession()
+  const loading = status === "loading"
 
   const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
+    await signIn("credentials", {
       email: "ceo@aviat.io",
-      password: "password123"
+      password: "password123",
+      redirect: false
     })
-    if (error) {
-      console.error("Login error:", error)
-    } else {
-      window.location.reload()
-    }
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    window.location.reload()
+    await signOut({ redirect: false })
   }
 
   if (loading) {
@@ -55,10 +38,10 @@ export default function TestCheckoutPage() {
         <CardContent className="space-y-4">
           <div className="p-4 border rounded-lg">
             <h3 className="font-semibold mb-2">Authentication Status:</h3>
-            {user ? (
+            {session?.user ? (
               <div className="space-y-2">
-                <p>✅ Logged in as: {user.email}</p>
-                <p>User ID: {user.id}</p>
+                <p>✅ Logged in as: {session.user.email}</p>
+                <p>User ID: {session.user.id}</p>
                 <Button onClick={handleLogout} variant="outline">
                   Logout
                 </Button>
@@ -73,7 +56,7 @@ export default function TestCheckoutPage() {
             )}
           </div>
 
-          {user && (
+          {session?.user && (
             <div className="space-y-4">
               <div className="p-4 border rounded-lg">
                 <h3 className="font-semibold mb-2">Test Checkout:</h3>

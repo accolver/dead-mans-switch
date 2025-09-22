@@ -1,6 +1,6 @@
 import { eq, and, desc, lt } from "drizzle-orm";
 import { db } from "./connection";
-import { secrets, type Secret, type SecretInsert, type SecretUpdate } from "./schema";
+import { secrets, userContactMethods, type Secret, type SecretInsert, type SecretUpdate, type UserContactMethod } from "./schema";
 
 // Secrets operations - compatible with existing API
 export async function getAllSecrets(userId: string): Promise<Secret[]> {
@@ -41,9 +41,15 @@ export async function createSecret(secret: SecretInsert): Promise<Secret> {
 }
 
 export async function updateSecret(id: string, updates: SecretUpdate): Promise<Secret> {
+  // Create update object with updatedAt
+  const updateData: Record<string, unknown> = {
+    ...updates,
+    updatedAt: new Date()
+  };
+
   const result = await db
     .update(secrets)
-    .set({ ...updates, updatedAt: new Date() })
+    .set(updateData)
     .where(eq(secrets.id, id))
     .returning();
 
@@ -81,6 +87,62 @@ export async function getOverdueSecrets(): Promise<Secret[]> {
 export async function getSecretWithOwnership(id: string, userId: string): Promise<Secret> {
   // This is the same as getSecret - keeping for API compatibility
   return getSecret(id, userId);
+}
+
+// User Contact Methods operations
+export async function getUserContactMethods(userId: string): Promise<UserContactMethod[]> {
+  const result = await db
+    .select()
+    .from(userContactMethods)
+    .where(eq(userContactMethods.userId, userId));
+
+  return result;
+}
+
+export async function upsertUserContactMethods(userId: string, data: {
+  email?: string;
+  phone?: string;
+  preferredMethod?: "email" | "phone" | "both";
+}): Promise<UserContactMethod> {
+  // First try to update existing record
+  const existingRecord = await db
+    .select()
+    .from(userContactMethods)
+    .where(eq(userContactMethods.userId, userId))
+    .limit(1);
+
+  if (existingRecord.length > 0) {
+    // Update existing record
+    const result = await db
+      .update(userContactMethods)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(userContactMethods.userId, userId))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error("Failed to update contact methods");
+    }
+
+    return result[0];
+  } else {
+    // Insert new record
+    const result = await db
+      .insert(userContactMethods)
+      .values({
+        userId,
+        ...data
+      })
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error("Failed to create contact methods");
+    }
+
+    return result[0];
+  }
 }
 
 // Database health check

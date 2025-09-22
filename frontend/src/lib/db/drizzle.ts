@@ -1,7 +1,7 @@
+import { and, desc, eq, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { secrets } from "./schema";
-import { eq, and, desc, lt } from "drizzle-orm";
+import { secrets, users } from "./schema";
 
 // Database URL from environment
 const databaseUrl = process.env.DATABASE_URL;
@@ -13,6 +13,9 @@ if (!databaseUrl) {
 // Create the connection
 const client = postgres(databaseUrl);
 export const db = drizzle(client);
+
+// Export tables for use in auth configuration
+export { users };
 
 // Database service functions using Drizzle
 export const secretsService = {
@@ -60,8 +63,8 @@ export const secretsService = {
       .where(
         and(
           eq(secrets.status, "active"),
-          lt(secrets.nextCheckIn, now)
-        )
+          lt(secrets.nextCheckIn, now),
+        ),
       );
   },
 };

@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
-
-interface SupabaseUser {
-  id: string
-  email?: string
-  email_verified?: boolean
-}
+import { db } from '@/lib/db/drizzle'
+import { users, verificationTokens } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { checkRateLimit } from '@/lib/auth/rate-limiting'
 
 const verifyEmailSchema = z.object({
   email: z.string().email('Invalid email address'),
-  otp: z.string().min(6, 'OTP must be 6 digits').max(6, 'OTP must be 6 digits')
+  token: z.string().min(1, 'Token is required')
 })
 
 export async function POST(request: NextRequest) {
@@ -23,68 +20,146 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Email and OTP are required',
+          error: 'Email and token are required',
           details: validation.error.errors
         },
         { status: 400 }
       )
     }
 
-    const { email, otp } = validation.data
-    const supabase = await createClient()
+    const { email, token } = validation.data
+    const normalizedEmail = email.toLowerCase().trim()
 
-    // Verify the OTP
-    const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'email'
-    })
-
-    if (error) {
-      console.error('[VerifyEmail] Verification error:', error)
-
-      // Handle specific error types
-      let statusCode = 400
-      let errorMessage = error.message
-
-      if (error.message?.includes('expired')) {
-        statusCode = 400
-        errorMessage = 'Verification code has expired'
-      } else if (error.message?.includes('invalid')) {
-        statusCode = 400
-        errorMessage = 'Invalid verification code'
-      }
-
-      return NextResponse.json(
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit('verify-email', normalizedEmail)
+    if (!rateLimitResult.allowed) {
+      const response = NextResponse.json(
         {
           success: false,
-          error: errorMessage
+          error: 'Too many verification attempts. Please try again later.',
+          retryAfter: rateLimitResult.retryAfter
         },
-        { status: statusCode }
+        { status: 429 }
       )
+
+      response.headers.set('Retry-After', rateLimitResult.retryAfter?.toString() || '300')
+      response.headers.set('X-RateLimit-Remaining', '0')
+      response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toISOString())
+
+      return response
     }
 
-    if (!data.user) {
+    // Look up verification token
+    const tokenResult = await db
+      .select()
+      .from(verificationTokens)
+      .where(and(
+        eq(verificationTokens.identifier, normalizedEmail),
+        eq(verificationTokens.token, token)
+      ))
+      .limit(1)
+
+    const verificationToken = tokenResult[0]
+    if (!verificationToken) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Verification failed - no user data'
+          error: 'Invalid or expired verification token'
         },
         { status: 400 }
       )
     }
 
-    // Success response
-    const user = data.user as SupabaseUser
-    return NextResponse.json({
+    // Check if token is expired
+    if (verificationToken.expires < new Date()) {
+      // Clean up expired token
+      await db
+        .delete(verificationTokens)
+        .where(eq(verificationTokens.token, token))
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Verification token has expired'
+        },
+        { status: 400 }
+      )
+    }
+
+    // Look up user
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1)
+
+    const user = userResult[0]
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'User not found'
+        },
+        { status: 404 }
+      )
+    }
+
+    // Check if user is already verified
+    if (user.emailVerified) {
+      // Still clean up the token
+      await db
+        .delete(verificationTokens)
+        .where(eq(verificationTokens.token, token))
+
+      const response = NextResponse.json({
+        success: true,
+        verified: true,
+        message: 'Email is already verified',
+        user: {
+          id: user.id,
+          email: user.email
+        }
+      })
+
+      response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
+      response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toISOString())
+
+      return response
+    }
+
+    // Update user as verified and clean up token
+    await Promise.all([
+      // Mark email as verified
+      db
+        .update(users)
+        .set({
+          emailVerified: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, user.id)),
+
+      // Delete the used verification token
+      db
+        .delete(verificationTokens)
+        .where(eq(verificationTokens.token, token))
+    ])
+
+    console.log(`[VerifyEmail] Successfully verified email for user: ${user.id}`)
+
+    const response = NextResponse.json({
       success: true,
       verified: true,
       user: {
         id: user.id,
-        email: user.email,
-        email_verified: user.email_verified
+        email: user.email
       }
     })
+
+    // Add rate limit headers
+    response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
+    response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toISOString())
+
+    return response
 
   } catch (error) {
     console.error('[VerifyEmail] Unexpected error:', error)

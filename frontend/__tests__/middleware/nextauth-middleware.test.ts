@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { getUserById } from '@/lib/auth/users'
 
 // Mock NextAuth JWT
 vi.mock('next-auth/jwt', () => ({
   getToken: vi.fn()
+}))
+
+// Mock user database functions
+vi.mock('@/lib/auth/users', () => ({
+  getUserById: vi.fn()
 }))
 
 // Mock Next.js server functions
@@ -17,6 +23,7 @@ vi.mock('next/server', () => ({
 }))
 
 const mockGetToken = getToken as any
+const mockGetUserById = getUserById as any
 
 describe('NextAuth Middleware', () => {
   let mockRequest: NextRequest
@@ -79,6 +86,18 @@ describe('NextAuth Middleware', () => {
         name: 'Test User'
       }
       mockGetToken.mockResolvedValue(mockToken)
+
+      // Mock verified user in database
+      const mockUser = {
+        id: 'user123',
+        email: 'user@example.com',
+        name: 'Test User',
+        emailVerified: new Date('2024-01-01'), // Email verified
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      mockGetUserById.mockResolvedValue(mockUser)
+
       mockRequest.nextUrl.pathname = '/dashboard'
 
       const { middleware } = await import('@/middleware')

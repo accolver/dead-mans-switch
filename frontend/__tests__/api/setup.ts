@@ -105,7 +105,10 @@ const mockCrypto = {
   })),
 };
 
-vi.mock("crypto", () => mockCrypto);
+vi.mock("crypto", () => ({
+  default: mockCrypto,
+  ...mockCrypto
+}));
 
 // Mock encryption functions with expected return values
 vi.mock("@/lib/encryption", () => ({
@@ -117,6 +120,36 @@ vi.mock("@/lib/encryption", () => ({
     })
   ),
   decryptMessage: vi.fn(() => Promise.resolve("decrypted message")),
+}));
+
+// Mock NextAuth getServerSession
+const mockSession = {
+  user: {
+    id: "user-123",
+    email: "test@example.com",
+    name: "Test User"
+  }
+};
+
+vi.mock("next-auth/next", () => ({
+  getServerSession: vi.fn(() => Promise.resolve(mockSession))
+}));
+
+// Mock database services
+const mockSecretsService = {
+  create: vi.fn()
+};
+
+const mockRobustSecretsService = {
+  create: vi.fn()
+};
+
+vi.mock("@/lib/db/drizzle", () => ({
+  secretsService: mockSecretsService
+}));
+
+vi.mock("@/lib/db/secrets-service-robust", () => ({
+  RobustSecretsService: vi.fn(() => mockRobustSecretsService)
 }));
 
 // Mock crypto for encrypt/decrypt routes
@@ -157,4 +190,4 @@ Object.defineProperty(global, "TextDecoder", {
   },
 });
 
-export { mockCookieStore, mockCrypto, mockSupabaseClient };
+export { mockCookieStore, mockCrypto, mockSupabaseClient, mockSession, mockSecretsService, mockRobustSecretsService };

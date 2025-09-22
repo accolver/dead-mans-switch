@@ -27,7 +27,7 @@ export async function googleOAuthFlow(options: OAuthOptions = {}): Promise<OAuth
 
   try {
     const result = await signIn('google', {
-      callbackUrl: '/auth/callback',
+      callbackUrl: options.redirectTo || '/dashboard',
       redirect: true,
       ...options
     })
@@ -97,7 +97,7 @@ export async function handleOAuthCallback(): Promise<OAuthResult> {
 
     return {
       success: true,
-      user: session.user
+      user: session.user as { id: string; name?: string; email?: string; image?: string }
     }
   } catch (error) {
     console.error('[OAuth] OAuth callback validation error:', {

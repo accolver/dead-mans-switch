@@ -1,7 +1,7 @@
 import { NEXT_PUBLIC_SITE_URL } from "@/lib/env";
 import { getCryptoPaymentProvider } from "@/lib/payment";
 import { Subscription } from "@/lib/payment/interfaces/PaymentProvider";
-import { createClient } from "@/utils/supabase/server";
+// import { createClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {

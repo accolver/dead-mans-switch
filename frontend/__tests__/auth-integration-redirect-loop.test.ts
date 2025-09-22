@@ -2,15 +2,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { redirect } from 'next/navigation'
+import { getUserById } from '@/lib/auth/users'
 
 // Mock NextAuth JWT
 vi.mock('next-auth/jwt', () => ({
   getToken: vi.fn()
 }))
 
+// Mock auth users module
+vi.mock('@/lib/auth/users', () => ({
+  getUserById: vi.fn()
+}))
+
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
   redirect: vi.fn()
+}))
+
+// Mock Next.js server functions
+vi.mock('next/server', () => ({
+  NextRequest: vi.fn(),
+  NextResponse: {
+    redirect: vi.fn(),
+    next: vi.fn()
+  }
 }))
 
 // Mock Supabase client
@@ -23,6 +38,7 @@ vi.mock('@/utils/supabase/server', () => ({
 }))
 
 const mockGetToken = getToken as any
+const mockGetUserById = vi.mocked(getUserById)
 const mockRedirect = redirect as any
 
 describe('Auth Integration Redirect Loop Tests', () => {
@@ -56,7 +72,16 @@ describe('Auth Integration Redirect Loop Tests', () => {
       }
       mockGetToken.mockResolvedValue(nextAuthToken)
 
-      // 2. Supabase does not have the user
+      // 2. User exists in database (for middleware check)
+      const mockUser = {
+        id: 'user123',
+        email: 'user@example.com',
+        name: 'Test User',
+        emailVerified: new Date()
+      }
+      mockGetUserById.mockResolvedValue(mockUser)
+
+      // 3. Supabase does not have the user (separate concern)
       const { createClient } = await import('@/utils/supabase/server')
       const mockSupabase = createClient()
       mockSupabase.auth.getUser.mockResolvedValue({

@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateSession } from '@/utils/supabase/middleware'
-import type { User } from '@supabase/supabase-js'
+// import { updateSession } from '@/utils/supabase/middleware'
+// import type { User } from '@supabase/supabase-js'
 
-interface SupabaseUser extends User {
+// TODO: Replace with NextAuth types
+interface NextAuthUser {
+  id: string
+  email?: string
+  name?: string
+  image?: string
   email_verified?: boolean
 }
 
@@ -28,58 +33,33 @@ function requiresEmailVerification(pathname: string): boolean {
 
 /**
  * Check if user needs email verification based on provider and status
+ * TODO: Implement with NextAuth session
  */
-function userNeedsVerification(user: User): boolean {
-  // If already verified, no verification needed
-  const supabaseUser = user as SupabaseUser
-  if (supabaseUser.email_verified) {
-    return false
-  }
-
-  const provider = user.app_metadata?.provider
-
-  // Trusted OAuth providers are considered verified
-  if (provider === 'google' || provider === 'github' || provider === 'apple') {
-    return false
-  }
-
-  // Email/password and other providers need verification
-  return true
+function userNeedsVerification(user: NextAuthUser): boolean {
+  // TODO: Replace with NextAuth logic
+  console.warn("[Email Verification] userNeedsVerification is deprecated - use NextAuth middleware");
+  return false;
 }
 
 /**
  * Email verification middleware
  * Redirects unverified users to verification page for protected routes
+ * TODO: Implement with NextAuth middleware
  */
 export async function checkEmailVerificationMiddleware(request: NextRequest) {
   try {
-    const { user, supabaseResponse } = await updateSession(request)
+    // TODO: Replace with NextAuth middleware logic
+    console.warn("[Email Verification] checkEmailVerificationMiddleware is deprecated - use NextAuth middleware");
+
     const pathname = request.nextUrl.pathname
 
     // If route doesn't require verification, allow through
     if (!requiresEmailVerification(pathname)) {
-      return supabaseResponse
+      return NextResponse.next()
     }
 
-    // If no user, let the auth middleware handle it
-    if (!user) {
-      return supabaseResponse
-    }
-
-    // If user needs verification for this protected route
-    if (userNeedsVerification(user)) {
-      console.log(`[EmailVerification] Redirecting unverified user from ${pathname}`)
-
-      const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = '/auth/verify-email'
-      redirectUrl.searchParams.set('email', user.email || '')
-      redirectUrl.searchParams.set('next', pathname)
-
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // User is verified or doesn't need verification, allow through
-    return supabaseResponse
+    // For now, allow all requests through since we're migrating to NextAuth
+    return NextResponse.next()
   } catch (error) {
     console.error('[EmailVerification] Middleware error:', error)
     // On error, allow through to avoid breaking the app

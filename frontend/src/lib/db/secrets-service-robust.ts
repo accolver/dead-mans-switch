@@ -30,10 +30,12 @@ export class RobustSecretsService {
           ORDER BY ordinal_position;
         `);
 
-        console.log('Available columns:', columnCheck.rows.map(r => r.column_name));
+        // Handle different database client response formats
+        const columns = Array.isArray(columnCheck) ? columnCheck : (columnCheck as { rows?: unknown[] }).rows || [];
+        console.log('Available columns:', columns.map((r: { column_name?: string }) => r.column_name));
 
         // Check if the issue is a missing recipient_name column
-        const hasRecipientName = columnCheck.rows.some(row => row.column_name === 'recipient_name');
+        const hasRecipientName = columns.some((row: { column_name?: string }) => row.column_name === 'recipient_name');
 
         if (!hasRecipientName) {
           // Try to add the missing column

@@ -1,35 +1,16 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth/config'
+import { db } from '@/lib/db/drizzle'
+import { users } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
-interface SupabaseUser {
-  id: string
-  email?: string
-  email_verified?: boolean
-  app_metadata?: {
-    provider?: string
-  }
-}
-
-export async function GET() {
+export async function GET(_request: Request) {
   try {
-    const supabase = await createClient()
+    // Get NextAuth session
+    const session = await getServerSession(authOptions)
 
-    // Get current user
-    const { data, error } = await supabase.auth.getUser()
-
-    if (error) {
-      console.error('[VerificationStatus] Auth error:', error)
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to get user information'
-        },
-        { status: 500 }
-      )
-    }
-
-    if (!data.user) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         {
           success: false,
@@ -39,16 +20,41 @@ export async function GET() {
       )
     }
 
+    // Get user from database
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1)
+
+    const user = userResult[0]
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'User not found'
+        },
+        { status: 404 }
+      )
+    }
+
+    // Calculate additional metadata
+    const now = new Date();
+    const accountAge = user.createdAt ? Math.floor((now.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
     // Return verification status
-    const user = data.user as SupabaseUser
     return NextResponse.json({
       success: true,
-      isVerified: user.email_verified || false,
+      isVerified: !!user.emailVerified,
+      verificationDate: user.emailVerified,
+      accountAge,
       user: {
         id: user.id,
         email: user.email,
-        email_verified: user.email_verified,
-        provider: user.app_metadata?.provider
+        name: user.name,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       }
     })
 

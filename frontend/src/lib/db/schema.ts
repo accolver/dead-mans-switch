@@ -18,6 +18,8 @@ export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "basic"
 export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "inactive", "cancelled", "trial", "past_due"]);
 export const reminderStatusEnum = pgEnum("reminder_status", ["pending", "sent", "failed", "cancelled"]);
 export const reminderTypeEnum = pgEnum("reminder_type", ["25_percent", "50_percent", "7_days", "3_days", "24_hours", "12_hours", "1_hour"]);
+export const webhookStatusEnum = pgEnum("webhook_status", ["received", "processing", "processed", "failed", "retrying"]);
+export const paymentStatusEnum = pgEnum("payment_status", ["pending", "processing", "succeeded", "failed", "cancelled", "refunded"]);
 
 // NextAuth.js Tables
 export const users = pgTable("users", {
@@ -26,6 +28,7 @@ export const users = pgTable("users", {
   emailVerified: timestamp("email_verified", { mode: "date" }),
   name: text("name"),
   image: text("image"),
+  password: text("password"), // Optional field for credential-based authentication
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
@@ -187,16 +190,50 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const webhookEvents = pgTable("webhook_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  provider: text("provider").notNull(), // "stripe" or "btcpay"
+  eventType: text("event_type").notNull(),
+  eventId: text("event_id").notNull().unique(),
+  payload: jsonb("payload").notNull(),
+  status: webhookStatusEnum("status").notNull().default("received"),
+  processedAt: timestamp("processed_at"),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const paymentHistory = pgTable("payment_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  subscriptionId: uuid("subscription_id").references(() => userSubscriptions.id),
+  provider: text("provider").notNull(),
+  providerPaymentId: text("provider_payment_id").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("USD"),
+  status: paymentStatusEnum("status").notNull(),
+  failureReason: text("failure_reason"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Export types for use in application
 export type Secret = typeof secrets.$inferSelect;
 export type SecretInsert = typeof secrets.$inferInsert;
-export type SecretUpdate = Partial<SecretInsert>;
+export type SecretUpdate = Partial<Omit<SecretInsert, 'id' | 'createdAt'>> & {
+  updatedAt?: Date;
+};
 
 export type AdminNotification = typeof adminNotifications.$inferSelect;
 export type CheckInToken = typeof checkInTokens.$inferSelect;
 export type CheckinHistory = typeof checkinHistory.$inferSelect;
 export type UserContactMethod = typeof userContactMethods.$inferSelect;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type SubscriptionTier = typeof subscriptionTiers.$inferSelect;
+export type WebhookEvent = typeof webhookEvents.$inferSelect;
+export type PaymentHistory = typeof paymentHistory.$inferSelect;
 
 // NextAuth.js types
 export type User = typeof users.$inferSelect;
