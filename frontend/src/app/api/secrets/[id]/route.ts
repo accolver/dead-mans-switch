@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getServerSession } from "next-auth/next";
 import { authConfig } from "@/lib/auth-config";
+import { db } from "@/lib/db/drizzle";
+import { and, eq } from "drizzle-orm";
+import { checkInTokens, checkinHistory, emailNotifications, reminderJobs, secrets as secretsTable } from "@/lib/db/schema";
 
 export async function GET(
   request: Request,
@@ -112,8 +115,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Secret not found" }, { status: 404 });
     }
 
-    // Delete the secret
-    await secretsService.delete(id);
+    // Cascade delete related records inside a transaction
+    await db.transaction(async (tx) => {
+      await tx.delete(checkinHistory).where(eq(checkinHistory.secretId, id));
+      await tx.delete(checkInTokens).where(eq(checkInTokens.secretId, id));
+      await tx.delete(reminderJobs).where(eq(reminderJobs.secretId, id));
+      await tx.delete(emailNotifications).where(eq(emailNotifications.secretId, id));
+      await tx.delete(secretsTable).where(
+        and(eq(secretsTable.id, id), eq(secretsTable.userId, session.user.id))
+      );
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
