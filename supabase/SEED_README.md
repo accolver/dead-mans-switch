@@ -1,13 +1,12 @@
-# KeyFate Database Seed Data
+# KeyFate Database Seed Data (Drizzle + Postgres)
 
-This seed file provides comprehensive test data for local development of the KeyFate dead man's switch platform.
+This seed file provides comprehensive test data for local development of the KeyFate dead man's switch platform using **Drizzle ORM and direct Postgres connections** (Supabase has been removed).
 
 ## 🔧 Prerequisites
 
-For **Option B** (full seed), you'll need:
-
-- **Service Role Key** from Supabase Dashboard > Settings > API
-- **direnv** (optional but recommended): `brew install direnv` or see [direnv.net](https://direnv.net/)
+- **Postgres Database**: Cloud SQL or local PostgreSQL instance
+- **Environment Variables**: `DATABASE_URL` configured in `.env.local`
+- **Node.js**: Version 18+ with npm/pnpm
 
 ## 🔧 How to Use
 
@@ -15,49 +14,37 @@ For **Option B** (full seed), you'll need:
 
 **Best for quick testing without complex setup:**
 
-1. **Reset database:** `cd supabase && supabase db reset`
-2. **Start frontend:** `cd frontend && pnpm dev`
+1. **Apply database schema:** `cd frontend && npm run db:migrate`
+2. **Start frontend:** `cd frontend && npm run dev`
 3. **Sign up any test users** via your app's signup page
 4. **Create secrets manually** through the app interface
 
-✅ **Pros:** Simple, no configuration needed
+✅ **Pros:** Simple, no pre-configuration needed
 ⚠️ **Cons:** No pre-seeded secrets with special timing scenarios
 
-### Option B: Full Seed with Matching UUIDs
+### Option B: Full Seed with Test Data (Recommended)
 
-**Best for complete testing with all pre-seeded data:**
+**Best for complete testing with all pre-seeded data using Drizzle + Postgres:**
 
-1. **Get Service Role Key:** Supabase Dashboard > Settings > API > `service_role` key
-2. **Setup and run:**
-
-   **Option 2a: Using Makefile (easiest)**
-
+1. **Ensure environment is configured:**
    ```bash
-   # Setup environment variable with direnv
-   cp .envrc.example .envrc
-   # Edit .envrc with your actual service role key
-   direnv allow
-
-   # One command does everything!
-   cd supabase && make reset-and-seed
+   # Make sure DATABASE_URL is set in frontend/.env.local
+   echo $DATABASE_URL  # Should show your Postgres connection string
    ```
 
-   **Option 2b: Manual steps**
-
+2. **Run the complete seed process:**
    ```bash
-   cd supabase && make seed-db
-   SUPABASE_SERVICE_ROLE_KEY=your_key_here make seed-users
+   cd frontend
+
+   # Apply latest schema/migrations
+   npm run db:migrate
+
+   # Create test users with specific UUIDs and seed data
+   node create-seed-users.js
    ```
 
-   **Option 2c: Direct script execution**
-
-   ```bash
-   cd supabase && supabase db reset
-   cd frontend && SUPABASE_SERVICE_ROLE_KEY=your_key_here node create-seed-users.js
-   ```
-
-✅ **Pros:** Complete seed data with special timing scenarios
-⚠️ **Cons:** Requires Service Role Key setup
+✅ **Pros:** Complete seed data with special timing scenarios, realistic test data
+⚠️ **Cons:** Requires Postgres database access
 
 ## 👥 Test Users
 
@@ -126,53 +113,71 @@ To test the reminder processing system:
 
 ## 🔄 Refreshing Data
 
-To refresh the seed data:
+To refresh the seed data with the new Drizzle setup:
 
-**Using Makefile (recommended):**
+**Recommended approach:**
+
 ```bash
-cd supabase && make reset-and-seed
+cd frontend
+
+# Clear existing data and reseed
+npm run db:reset  # If available, or manually drop/recreate tables
+npm run db:migrate
+node create-seed-users.js
 ```
 
-**Manual approach:**
+**Alternative approach:**
+
 ```bash
-cd supabase && supabase db reset
-# Then recreate auth users via create-seed-users.js or dashboard
+cd frontend
+
+# Just recreate users and data (preserves schema)
+node create-seed-users.js
 ```
 
-## 🛠️ Makefile Commands
+## 🛠️ Database Commands
 
-For convenience, use these Makefile commands in the `supabase/` directory:
+For convenience, use these commands in the `frontend/` directory:
 
 | Command | Description |
 |---------|-------------|
-| `make seed-db` | Reset database and apply seed.sql |
-| `make seed-users` | Create auth users with specific UUIDs |
-| `make reset-and-seed` | Complete setup: users first, then database reset |
-| `make verify-seed` | Check that secrets are properly linked to users |
-| `make apply-seed-data` | Re-apply seed.sql to existing database |
+| `npm run db:migrate` | Apply latest Drizzle schema migrations |
+| `node create-seed-users.js` | Create test users and seed data via Drizzle |
+| `npm run db:studio` | Open Drizzle Studio for database inspection |
+| `npm run db:generate` | Generate new migration files from schema changes |
 
 ## 🔍 Troubleshooting
 
 ### No secrets showing in dashboard after login?
 
-1. **Verify the seed data:**
+1. **Check database connection:**
+
    ```bash
-   cd supabase && make verify-seed
+   cd frontend
+   echo $DATABASE_URL  # Ensure this is set correctly
    ```
 
-2. **Check if secrets exist but aren't linked:**
-   - Look for "Secrets Count by User" in the output
-   - If count is 0 but "All Secrets in Database" shows data, there's a linking issue
+2. **Verify the seed data using Drizzle Studio:**
+
+   ```bash
+   cd frontend
+   npm run db:studio  # Opens web interface to inspect database
+   ```
 
 3. **Re-run the complete setup:**
+
    ```bash
-   cd supabase && make reset-and-seed
+   cd frontend
+   npm run db:migrate
+   node create-seed-users.js
    ```
 
-### Common Issues:
-- **Foreign key constraint violations:** Auth users must exist before database records
-- **RLS policies:** May prevent viewing secrets created before auth users existed
-- **UUID mismatches:** Use `make verify-seed` to check user IDs match
+### Common Issues
+
+- **Environment Variables:** Ensure `DATABASE_URL` is properly configured in `.env.local`
+- **Database Connectivity:** Test connection to your Postgres instance
+- **Migration State:** Run `npm run db:migrate` to ensure schema is up to date
+- **NextAuth Setup:** Verify NextAuth database tables exist and user sessions work correctly
 
 ## ⚠️ Important Notes
 

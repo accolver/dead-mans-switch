@@ -18,6 +18,12 @@ class InfrastructureTest {
   }
 
   test(name, testFn) {
+    if (typeof name !== 'string') {
+      throw new Error('Test name must be a string');
+    }
+    if (typeof testFn !== 'function') {
+      throw new Error('Test function must be a function');
+    }
     this.tests.push({ name, testFn });
   }
 
@@ -26,7 +32,11 @@ class InfrastructureTest {
 
     for (const { name, testFn } of this.tests) {
       try {
-        await testFn();
+        // Handle both sync and async test functions
+        const result = testFn();
+        if (result instanceof Promise) {
+          await result;
+        }
         console.log(`✅ ${name}`);
         this.passed++;
       } catch (error) {
@@ -51,14 +61,24 @@ class InfrastructureTest {
   }
 
   fileExists(filePath) {
+    if (typeof filePath !== 'string') {
+      throw new Error('File path must be a string');
+    }
     return fs.existsSync(filePath);
   }
 
   exec(command) {
+    if (typeof command !== 'string') {
+      throw new Error('Command must be a string');
+    }
     try {
-      return execSync(command, { encoding: 'utf8', stdio: 'pipe' });
+      const result = execSync(command, { encoding: 'utf8', stdio: 'pipe' });
+      return typeof result === 'string' ? result : String(result);
     } catch (error) {
-      throw new Error(`Command failed: ${command}\n${error.message}`);
+      const errorMessage = error && typeof error === 'object' && 'message' in error
+        ? error.message
+        : 'Unknown error occurred';
+      throw new Error(`Command failed: ${command}\n${errorMessage}`);
     }
   }
 }
@@ -71,6 +91,7 @@ test.test('Root Makefile exists with required commands', () => {
   test.assert(test.fileExists('./Makefile'), 'Root Makefile should exist');
 
   const makefile = fs.readFileSync('./Makefile', 'utf8');
+  test.assert(typeof makefile === 'string' && makefile.length > 0, 'Makefile should not be empty');
   test.assert(makefile.includes('install:'), 'Makefile should have install target');
   test.assert(makefile.includes('dev:'), 'Makefile should have dev target');
   test.assert(makefile.includes('deploy-staging:'), 'Makefile should have deploy-staging target');
@@ -82,6 +103,7 @@ test.test('Docker Compose configuration exists for local development', () => {
   test.assert(test.fileExists('./docker-compose.yml'), 'docker-compose.yml should exist');
 
   const compose = fs.readFileSync('./docker-compose.yml', 'utf8');
+  test.assert(typeof compose === 'string' && compose.length > 0, 'docker-compose.yml should not be empty');
   test.assert(compose.includes('postgres'), 'Should include postgres service');
   test.assert(compose.includes('volumes:'), 'Should include volume configuration');
   test.assert(compose.includes('environment:'), 'Should include environment variables');
@@ -111,6 +133,7 @@ test.test('make install command works', () => {
 // Test 6: Make dev command starts services
 test.test('make dev command structure exists', () => {
   const makefile = fs.readFileSync('./Makefile', 'utf8');
+  test.assert(typeof makefile === 'string' && makefile.length > 0, 'Makefile should be readable');
   test.assert(makefile.includes('docker-compose up'), 'dev target should start docker-compose');
   test.assert(makefile.includes('frontend'), 'dev target should reference frontend');
 });
