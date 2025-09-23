@@ -1,16 +1,25 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { OTPInput } from './otp-input'
-import { ResendVerificationButton } from './email-verification'
-import { verifyEmailWithOTP, checkEmailVerificationStatus } from '@/lib/email-verification'
-import { useToast } from '@/hooks/use-toast'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
+import {
+  checkEmailVerificationStatus,
+  verifyEmailWithOTP,
+} from "@/lib/email-verification"
+import { AlertCircle, CheckCircle2, Loader2, Mail } from "lucide-react"
+import { useSession } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { ResendVerificationButton } from "./email-verification"
+import { OTPInput } from "./otp-input"
 
 export function EmailVerificationPage() {
   const router = useRouter()
@@ -18,73 +27,102 @@ export function EmailVerificationPage() {
   const { data: session, status } = useSession()
   const { toast } = useToast()
 
-  const [otp, setOtp] = useState('')
+  const [otp, setOtp] = useState("")
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [alreadyVerified, setAlreadyVerified] = useState(false)
 
-  const email = searchParams.get('email') || session?.user?.email || ''
-  const callbackUrl = searchParams.get('callbackUrl') || searchParams.get('next') || '/dashboard'
-
-  // Check verification status on load
+  const email = searchParams.get("email") || session?.user?.email || ""
   useEffect(() => {
-    if (status !== 'authenticated') return
+    if (success) {
+      toast({
+        title: "Email verified!",
+        description: "Your email address has been successfully verified.",
+      })
+    }
+  }, [success, toast])
+  const callbackUrl =
+    searchParams.get("callbackUrl") || searchParams.get("next") || "/dashboard"
+
+  // Check verification status on load; if token present, attempt verify automatically
+  const hasCheckedRef = useRef(false)
+  useEffect(() => {
+    if (status !== "authenticated") return
+    if (hasCheckedRef.current) return
+    hasCheckedRef.current = true
 
     const checkStatus = async () => {
       try {
-        const verificationStatus = await checkEmailVerificationStatus()
+        const token = searchParams.get("token")
+        if (token && email) {
+          const result = await verifyEmailWithOTP(email, token)
+          if (result.success) {
+            setSuccess(true)
+            toast({
+              title: "Email verified!",
+              description: "Your email address has been successfully verified.",
+            })
+            setTimeout(() => router.push(callbackUrl), 1500)
+            return
+          }
+        }
+
+        const verificationStatus = await checkEmailVerificationStatus(email)
         if (verificationStatus.isVerified) {
           setAlreadyVerified(true)
           toast({
-            title: 'Already verified',
-            description: 'Your email is already verified. Redirecting...',
+            title: "Already verified",
+            description: "Your email is already verified. Redirecting...",
           })
           setTimeout(() => router.push(callbackUrl), 2000)
         }
       } catch (err) {
-        console.error('Failed to check verification status:', err)
+        console.error("Failed to check verification status:", err)
       } finally {
         setChecking(false)
       }
     }
 
     checkStatus()
-  }, [status, callbackUrl, router, toast])
+  }, [status, callbackUrl, router, toast, email])
 
   const handleOTPComplete = async (otpValue: string) => {
     if (!email) {
-      setError('Email address is required')
+      setError("Email address is required")
       return
     }
 
     setLoading(true)
     setError(null)
 
-    try {
-      const result = await verifyEmailWithOTP(email, otpValue)
+    setTimeout(() => {
+      ;(async () => {
+        try {
+          const result = await verifyEmailWithOTP(email, otpValue)
 
-      if (result.success) {
-        setSuccess(true)
-        toast({
-          title: 'Email verified!',
-          description: 'Your email address has been successfully verified.',
-        })
+          if (result.success) {
+            setSuccess(true)
+            toast({
+              title: "Email verified!",
+              description: "Your email address has been successfully verified.",
+            })
 
-        // Brief delay to show success message
-        setTimeout(() => {
-          router.push(callbackUrl)
-        }, 1500)
-      } else {
-        setError(result.error || 'Verification failed')
-      }
-    } catch (err) {
-      console.error('Verification error:', err)
-      setError('Network error. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+            setTimeout(() => {
+              router.push(callbackUrl)
+            }, 1500)
+          } else {
+            setError(result.error || "Verification failed")
+          }
+        } catch (err) {
+          console.error("Verification error:", err)
+          setError("Network error. Please try again.")
+        } finally {
+          setLoading(false)
+        }
+      })()
+    }, 20)
   }
 
   const handleOTPChange = (otpValue: string) => {
@@ -95,8 +133,8 @@ export function EmailVerificationPage() {
   const handleResendSuccess = () => {
     setError(null)
     toast({
-      title: 'Email sent',
-      description: 'A new verification code has been sent to your email.',
+      title: "Email sent",
+      description: "A new verification code has been sent to your email.",
     })
   }
 
@@ -106,22 +144,25 @@ export function EmailVerificationPage() {
 
   const handleRetry = () => {
     setError(null)
-    setOtp('')
+    setOtp("")
   }
 
-  if (status === 'loading' || checking) {
+  if (status === "loading") {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex items-center space-x-2">
-          <Loader2 className="h-4 w-4 animate-spin" data-testid="loading-spinner" />
+          <Loader2
+            className="h-4 w-4 animate-spin"
+            data-testid="loading-spinner"
+          />
           <span>Checking verification status...</span>
         </div>
       </div>
     )
   }
 
-  if (status === 'unauthenticated') {
-    router.push('/sign-in')
+  if (status === "unauthenticated") {
+    router.push("/sign-in")
     return null
   }
 
@@ -130,11 +171,13 @@ export function EmailVerificationPage() {
       <div className="flex min-h-screen items-center justify-center">
         <Card data-testid="verification-card">
           <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto" />
+            <div className="space-y-4 text-center">
+              <CheckCircle2 className="mx-auto h-16 w-16 text-green-600" />
               <div>
-                <h3 className="text-lg font-semibold text-green-600">Email Already Verified</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-lg font-semibold text-green-600">
+                  Email Already Verified
+                </h3>
+                <p className="text-muted-foreground text-sm">
                   Your email address is already verified. Redirecting...
                 </p>
               </div>
@@ -150,11 +193,13 @@ export function EmailVerificationPage() {
       <div className="flex min-h-screen items-center justify-center">
         <Card data-testid="verification-card">
           <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto" />
+            <div className="space-y-4 text-center">
+              <CheckCircle2 className="mx-auto h-16 w-16 text-green-600" />
               <div>
-                <h3 className="text-lg font-semibold text-green-600">Email Verified!</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-lg font-semibold text-green-600">
+                  Email Verified!
+                </h3>
+                <p className="text-muted-foreground text-sm">
                   Redirecting you to your destination...
                 </p>
               </div>
@@ -168,31 +213,46 @@ export function EmailVerificationPage() {
   return (
     <div
       data-testid="verification-container"
-      className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-16"
+      className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-16"
     >
       <Card className="w-full max-w-md" data-testid="verification-card">
         <CardHeader className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Mail className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-2xl font-bold">Verify your email address</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Verify your email address
+          </CardTitle>
           <CardDescription>
-            We need to verify your email address before you can access the application.
+            We need to verify your email address before you can access the
+            application.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {checking && (
+            <div
+              className="flex items-center justify-center space-x-2"
+              role="status"
+            >
+              <Loader2
+                className="h-4 w-4 animate-spin"
+                data-testid="loading-spinner"
+              />
+              <span>Checking verification status...</span>
+            </div>
+          )}
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 {error}
-                {error.includes('Network error') && (
+                {error.includes("Network error") && (
                   <Button
                     variant="link"
                     size="sm"
                     onClick={handleRetry}
-                    className="ml-2 p-0 h-auto text-destructive hover:text-destructive/80"
+                    className="text-destructive hover:text-destructive/80 ml-2 h-auto p-0"
                   >
                     Retry
                   </Button>
@@ -201,9 +261,9 @@ export function EmailVerificationPage() {
             </Alert>
           )}
 
-          <div className="text-center space-y-4">
+          <div className="space-y-4 text-center">
             <p className="text-sm text-gray-600">
-              Enter the 6-digit code sent to{' '}
+              Enter the 6-digit code sent to{" "}
               <span className="font-medium">{email}</span>
             </p>
 
@@ -211,20 +271,23 @@ export function EmailVerificationPage() {
               <OTPInput
                 onComplete={handleOTPComplete}
                 onChange={handleOTPChange}
-                disabled={loading}
+                disabled={false}
               />
 
               {loading && (
-                <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" data-testid="loading-spinner" />
+                <div className="text-muted-foreground flex items-center justify-center space-x-2 text-sm">
+                  <Loader2
+                    className="h-4 w-4 animate-spin"
+                    data-testid="loading-spinner"
+                  />
                   <span>Verifying...</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="text-center space-y-3">
-            <p className="text-sm text-muted-foreground">
+          <div className="space-y-3 text-center">
+            <p className="text-muted-foreground text-sm">
               Didn't receive the email? Check your spam folder.
             </p>
 
@@ -236,7 +299,7 @@ export function EmailVerificationPage() {
             />
           </div>
 
-          <div className="pt-4 border-t space-y-3">
+          <div className="space-y-3 border-t pt-4">
             <Button
               onClick={() => router.push(callbackUrl)}
               className="w-full"
@@ -246,7 +309,7 @@ export function EmailVerificationPage() {
             </Button>
 
             <Button
-              onClick={() => router.push('/sign-in')}
+              onClick={() => router.push("/sign-in")}
               variant="ghost"
               className="w-full text-gray-600"
             >

@@ -19,9 +19,6 @@ describe("Environment Variables", () => {
     process.env.NEXT_PUBLIC_PARENT_COMPANY = "Test Parent";
     process.env.GOOGLE_CLIENT_ID = "test-client-id";
     process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
-    // Optional Supabase variables during migration
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
 
     const env = await import("@/lib/env");
 
@@ -31,9 +28,6 @@ describe("Environment Variables", () => {
     expect(env.NEXT_PUBLIC_PARENT_COMPANY).toBe("Test Parent");
     expect(env.GOOGLE_CLIENT_ID).toBe("test-client-id");
     expect(env.GOOGLE_CLIENT_SECRET).toBe("test-client-secret");
-    // Optional variables
-    expect(env.NEXT_PUBLIC_SUPABASE_ANON_KEY).toBe("test-anon-key");
-    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe("https://test.supabase.co");
   });
 
   it("should throw error when NEXT_PUBLIC_SITE_URL is not set", async () => {
@@ -87,15 +81,10 @@ describe("Environment Variables", () => {
     process.env.NEXT_PUBLIC_PARENT_COMPANY = "Test Parent";
     process.env.GOOGLE_CLIENT_ID = "test-client-id";
     process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
-    // Supabase variables not set (should not throw)
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
 
     const env = await import("@/lib/env");
 
     expect(env.NEXT_PUBLIC_SITE_URL).toBe("https://example.com");
-    expect(env.NEXT_PUBLIC_SUPABASE_ANON_KEY).toBeUndefined();
-    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBeUndefined();
   });
 
   it("should handle optional Stripe variable gracefully", async () => {

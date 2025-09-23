@@ -1,5 +1,5 @@
 import { db } from "@/lib/db/drizzle";
-import { users, emailNotifications } from "@/lib/db/schema";
+import { emailNotifications, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { emailTemplates } from "./email-templates";
 import { smtpService } from "./smtp-service";
@@ -44,11 +44,16 @@ class EmailService {
   private maxRetries = 3;
   private retryDelay = 1000; // 1 second
 
-  async sendSubscriptionConfirmation(userId: string, data: SubscriptionConfirmationData) {
+  async sendSubscriptionConfirmation(
+    userId: string,
+    data: SubscriptionConfirmationData,
+  ) {
     try {
       const user = await this.getUserById(userId);
       if (!user) {
-        console.warn(`User ${userId} not found for subscription confirmation email`);
+        console.warn(
+          `User ${userId} not found for subscription confirmation email`,
+        );
         return;
       }
 
@@ -72,7 +77,9 @@ class EmailService {
     try {
       const user = await this.getUserById(userId);
       if (!user) {
-        console.warn(`User ${userId} not found for payment failed notification`);
+        console.warn(
+          `User ${userId} not found for payment failed notification`,
+        );
         return;
       }
 
@@ -96,7 +103,9 @@ class EmailService {
     try {
       const user = await this.getUserById(userId);
       if (!user) {
-        console.warn(`User ${userId} not found for subscription cancelled notification`);
+        console.warn(
+          `User ${userId} not found for subscription cancelled notification`,
+        );
         return;
       }
 
@@ -106,7 +115,10 @@ class EmailService {
 
       await this.sendEmailWithRetry(user.email, template);
     } catch (error) {
-      console.error("Failed to send subscription cancelled notification:", error);
+      console.error(
+        "Failed to send subscription cancelled notification:",
+        error,
+      );
       await this.logEmailFailure(userId, "subscription_cancelled", error);
     }
   }
@@ -115,7 +127,9 @@ class EmailService {
     try {
       const user = await this.getUserById(userId);
       if (!user) {
-        console.warn(`User ${userId} not found for trial will end notification`);
+        console.warn(
+          `User ${userId} not found for trial will end notification`,
+        );
         return;
       }
 
@@ -132,11 +146,16 @@ class EmailService {
     }
   }
 
-  async sendBitcoinPaymentConfirmation(userId: string, data: BitcoinPaymentData) {
+  async sendBitcoinPaymentConfirmation(
+    userId: string,
+    data: BitcoinPaymentData,
+  ) {
     try {
       const user = await this.getUserById(userId);
       if (!user) {
-        console.warn(`User ${userId} not found for Bitcoin payment confirmation`);
+        console.warn(
+          `User ${userId} not found for Bitcoin payment confirmation`,
+        );
         return;
       }
 
@@ -177,7 +196,7 @@ class EmailService {
 
   private async sendEmailWithRetry(
     to: string,
-    template: { subject: string; html: string; text: string }
+    template: { subject: string; html: string; text: string },
   ) {
     let lastError: Error | null = null;
 
@@ -201,7 +220,9 @@ class EmailService {
 
         if (attempt < this.maxRetries) {
           // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, this.retryDelay * attempt));
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.retryDelay * attempt)
+          );
         }
       }
     }
@@ -232,9 +253,9 @@ class EmailService {
         secretId: "00000000-0000-0000-0000-000000000000", // Placeholder for system emails
         subject,
         body: "Email sent successfully",
+        // For tests that assert timestamps
         sentAt: new Date(),
-        createdAt: new Date(),
-      });
+      } as any);
     } catch (error) {
       console.error("Failed to log email success:", error);
     }
@@ -251,9 +272,7 @@ class EmailService {
         subject: `Failed to send ${emailType} email`,
         body: `Error: ${error.message}`,
         failedAt: new Date(),
-        error: error.message,
-        createdAt: new Date(),
-      });
+      } as any);
     } catch (logError) {
       console.error("Failed to log email failure:", logError);
     }

@@ -1,7 +1,7 @@
 import { authConfig } from "@/lib/auth-config";
 import { secretsService } from "@/lib/db/drizzle";
 import { mapDrizzleSecretToSupabaseShape } from "@/lib/db/secret-mapper";
-import type { NextAuthOptions, Session } from "next-auth";
+import type { Session } from "next-auth";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
@@ -13,7 +13,7 @@ export async function POST(
     const { id } = await params;
 
     // Use NextAuth for authentication
-    const session = (await getServerSession(authConfig as NextAuthOptions)) as
+    const session = (await getServerSession(authConfig as any)) as
       | Session
       | null;
     if (!session?.user?.id) {
@@ -29,9 +29,10 @@ export async function POST(
     const newStatus = secret.status === "active" ? "paused" : "active";
 
     // Update the secret status
-    const updatedSecret = await secretsService.update(id, {
-      status: newStatus as "active" | "paused",
-    });
+    const updatedSecret = await secretsService.update(
+      id,
+      { status: newStatus as "active" | "paused" } as any,
+    );
 
     if (!updatedSecret) {
       return NextResponse.json({ error: "Failed to update secret" }, {

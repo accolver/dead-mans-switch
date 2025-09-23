@@ -5,11 +5,11 @@
  * with proper error handling, retry logic, and rate limiting.
  */
 
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 // Email service configuration
 interface EmailConfig {
-  provider: 'sendgrid' | 'console-dev' | 'resend';
+  provider: "sendgrid" | "console-dev" | "resend";
   apiKey?: string;
   adminEmail?: string;
   senderName?: string;
@@ -24,7 +24,7 @@ interface EmailData {
   text?: string;
   from?: string;
   replyTo?: string;
-  priority?: 'high' | 'normal' | 'low';
+  priority?: "high" | "normal" | "low";
   headers?: Record<string, string>;
   trackDelivery?: boolean;
 }
@@ -65,7 +65,7 @@ interface ConfigValidationResult {
 // Delivery status tracking
 interface DeliveryStatus {
   messageId: string;
-  status: 'sent' | 'delivered' | 'failed' | 'bounced' | 'spam';
+  status: "sent" | "delivered" | "failed" | "bounced" | "spam";
   deliveredAt?: Date;
   events: Array<{
     type: string;
@@ -79,44 +79,44 @@ interface DeliveryStatus {
  */
 export async function validateEmailConfig(): Promise<ConfigValidationResult> {
   const missingVars: string[] = [];
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = process.env.NODE_ENV === "development";
 
   // Check for SendGrid configuration
   if (!process.env.SENDGRID_API_KEY) {
-    missingVars.push('SENDGRID_API_KEY');
+    missingVars.push("SENDGRID_API_KEY");
   }
   if (!process.env.SENDGRID_ADMIN_EMAIL) {
-    missingVars.push('SENDGRID_ADMIN_EMAIL');
+    missingVars.push("SENDGRID_ADMIN_EMAIL");
   }
 
   // In development, allow fallback to console logging
   if (isDevelopment && missingVars.length > 0) {
     return {
       valid: true,
-      provider: 'console-dev',
+      provider: "console-dev",
       missingVars: [],
-      developmentMode: true
+      developmentMode: true,
     };
   }
 
   if (missingVars.length > 0) {
     return {
       valid: false,
-      provider: 'sendgrid',
-      missingVars
+      provider: "sendgrid",
+      missingVars,
     };
   }
 
   return {
     valid: true,
-    provider: 'sendgrid',
+    provider: "sendgrid",
     missingVars: [],
     config: {
-      provider: 'sendgrid',
+      provider: "sendgrid",
       apiKey: process.env.SENDGRID_API_KEY,
       adminEmail: process.env.SENDGRID_ADMIN_EMAIL,
-      senderName: process.env.SENDGRID_SENDER_NAME || 'Dead Man\'s Switch'
-    }
+      senderName: process.env.SENDGRID_SENDER_NAME || "Dead Man's Switch",
+    },
   };
 }
 
@@ -127,7 +127,9 @@ async function createTransporter() {
   const config = await validateEmailConfig();
 
   if (!config.valid) {
-    throw new Error(`Email configuration invalid: ${config.missingVars.join(', ')}`);
+    throw new Error(
+      `Email configuration invalid: ${config.missingVars.join(", ")}`,
+    );
   }
 
   if (config.developmentMode) {
@@ -137,11 +139,11 @@ async function createTransporter() {
 
   // Production SendGrid configuration
   const transporter = nodemailer.createTransport({
-    service: 'SendGrid',
+    service: "SendGrid",
     auth: {
-      user: 'apikey',
-      pass: process.env.SENDGRID_API_KEY
-    }
+      user: "apikey",
+      pass: process.env.SENDGRID_API_KEY,
+    },
   });
 
   return transporter;
@@ -153,7 +155,7 @@ async function createTransporter() {
 async function withRetry<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
-  baseDelay: number = 1000
+  baseDelay: number = 1000,
 ): Promise<T> {
   let lastError: Error;
 
@@ -164,7 +166,7 @@ async function withRetry<T>(
       lastError = error as Error;
 
       // Don't retry on non-retryable errors
-      if (error instanceof Error && error.message.includes('Invalid API key')) {
+      if (error instanceof Error && error.message.includes("Invalid API key")) {
         throw error;
       }
 
@@ -174,7 +176,7 @@ async function withRetry<T>(
 
       // Exponential backoff with jitter
       const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -186,12 +188,12 @@ async function withRetry<T>(
  */
 export async function sendEmail(
   emailData: EmailData,
-  options: EmailOptions = {}
+  options: EmailOptions = {},
 ): Promise<EmailResult> {
   const {
     maxRetries = 3,
     retryDelay = 1000,
-    timeout = 30000
+    timeout = 30000,
   } = options;
 
   try {
@@ -200,8 +202,8 @@ export async function sendEmail(
     if (!config.valid && !config.developmentMode) {
       return {
         success: false,
-        error: `Email service not configured: ${config.missingVars.join(', ')}`,
-        retryable: false
+        error: `Email service not configured: ${config.missingVars.join(", ")}`,
+        retryable: false,
       };
     }
 
@@ -212,79 +214,86 @@ export async function sendEmail(
 To: ${emailData.to}
 Subject: ${emailData.subject}
 From: ${emailData.from || config.config?.adminEmail}
-${emailData.text || 'HTML content provided'}
+${emailData.text || "HTML content provided"}
 ===================================
       `);
 
       return {
         success: true,
-        messageId: `dev-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-        provider: 'console-dev',
-        developmentMode: true
+        messageId: `dev-${Date.now()}-${
+          Math.random().toString(36).substring(7)
+        }`,
+        provider: "console-dev",
       };
     }
 
     // Production email sending with retry logic
     let attempts = 0;
 
-    const result = await withRetry(async () => {
-      attempts++;
-      const transporter = await createTransporter();
+    const result = await withRetry(
+      async () => {
+        attempts++;
+        const transporter = await createTransporter();
 
-      if (!transporter) {
-        throw new Error('Failed to create email transporter');
-      }
+        if (!transporter) {
+          throw new Error("Failed to create email transporter");
+        }
 
-      const mailOptions = {
-        to: emailData.to,
-        subject: emailData.subject,
-        html: emailData.html,
-        text: emailData.text,
-        from: emailData.from || `${config.config?.senderName} <${config.config?.adminEmail}>`,
-        replyTo: emailData.replyTo,
-        headers: emailData.headers,
-        priority: emailData.priority || 'normal'
-      };
+        const mailOptions = {
+          to: emailData.to,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text,
+          from: emailData.from ||
+            `${config.config?.senderName} <${config.config?.adminEmail}>`,
+          replyTo: emailData.replyTo,
+          headers: emailData.headers,
+          priority: emailData.priority || "normal",
+        };
 
-      const info = await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail(mailOptions);
 
-      return {
-        success: true,
-        messageId: info.messageId,
-        provider: 'sendgrid',
-        attempts,
-        trackingEnabled: emailData.trackDelivery || false
-      };
-    }, maxRetries, retryDelay);
+        return {
+          success: true,
+          messageId: info.messageId,
+          provider: "sendgrid",
+          attempts,
+          trackingEnabled: emailData.trackDelivery || false,
+        };
+      },
+      maxRetries,
+      retryDelay,
+    );
 
     return result;
-
   } catch (error) {
-    console.error('[EmailService] Error sending email:', error);
+    console.error("[EmailService] Error sending email:", error);
 
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const isRetryable = !errorMessage.includes('Invalid API key') &&
-                       !errorMessage.includes('Authentication failed');
+    const errorMessage = error instanceof Error
+      ? error.message
+      : "Unknown error";
+    const isRetryable = !errorMessage.includes("Invalid API key") &&
+      !errorMessage.includes("Authentication failed");
 
     // Check for rate limiting
-    if (errorMessage.includes('Rate limit') || errorMessage.includes('429')) {
+    if (errorMessage.includes("Rate limit") || errorMessage.includes("429")) {
       return {
         success: false,
-        error: 'Rate limit exceeded',
+        error: "Rate limit exceeded",
         retryable: true,
         retryAfter: 60,
         rateLimitInfo: {
           limit: 100,
           remaining: 0,
-          resetTime: Date.now() + 60000
-        }
+          resetTime: Date.now() + 60000,
+        },
       };
     }
 
     return {
       success: false,
       error: errorMessage,
-      retryable: isRetryable
+      retryable: isRetryable,
     };
   }
 }
@@ -294,15 +303,18 @@ ${emailData.text || 'HTML content provided'}
  */
 export async function sendVerificationEmail(
   email: string,
-  token: string
+  token: string,
 ): Promise<EmailResult & { templateUsed?: string; emailData?: any }> {
-  const { renderVerificationTemplate } = await import('./templates');
+  const { renderVerificationTemplate } = await import("./templates");
 
   const templateData = {
-    verificationUrl: `${process.env.NEXTAUTH_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`,
+    verificationUrl:
+      `${process.env.NEXTAUTH_URL}/auth/verify-email?token=${token}&email=${
+        encodeURIComponent(email)
+      }`,
     expirationHours: 24,
-    userName: email.split('@')[0], // Simple fallback
-    supportEmail: process.env.SENDGRID_ADMIN_EMAIL
+    userName: email.split("@")[0], // Simple fallback
+    supportEmail: process.env.SENDGRID_ADMIN_EMAIL,
   };
 
   const template = renderVerificationTemplate(templateData);
@@ -312,18 +324,18 @@ export async function sendVerificationEmail(
     subject: template.subject,
     html: template.html,
     text: template.text,
-    trackDelivery: true
+    trackDelivery: true,
   });
 
   if (result.success) {
     return {
       ...result,
-      templateUsed: 'verification',
+      templateUsed: "verification",
       emailData: {
         subject: template.subject,
         verificationUrl: templateData.verificationUrl,
-        expirationHours: templateData.expirationHours
-      }
+        expirationHours: templateData.expirationHours,
+      },
     };
   }
 
@@ -339,9 +351,9 @@ export async function sendReminderEmail(reminderData: {
   secretTitle: string;
   daysRemaining: number;
   checkInUrl: string;
-  urgencyLevel?: 'low' | 'medium' | 'high' | 'critical';
+  urgencyLevel?: "low" | "medium" | "high" | "critical";
 }): Promise<EmailResult & { templateUsed?: string }> {
-  const { renderReminderTemplate } = await import('./templates');
+  const { renderReminderTemplate } = await import("./templates");
 
   const template = renderReminderTemplate(reminderData);
 
@@ -350,14 +362,18 @@ export async function sendReminderEmail(reminderData: {
     subject: template.subject,
     html: template.html,
     text: template.text,
-    priority: reminderData.urgencyLevel === 'critical' || reminderData.urgencyLevel === 'high' ? 'high' : 'normal',
-    trackDelivery: true
+    priority:
+      reminderData.urgencyLevel === "critical" ||
+        reminderData.urgencyLevel === "high"
+        ? "high"
+        : "normal",
+    trackDelivery: true,
   });
 
   if (result.success) {
     return {
       ...result,
-      templateUsed: 'reminder'
+      templateUsed: "reminder",
     };
   }
 
@@ -374,10 +390,10 @@ export async function sendSecretDisclosureEmail(disclosureData: {
   senderName: string;
   message: string;
   secretContent: string;
-  disclosureReason?: 'scheduled' | 'manual';
+  disclosureReason?: "scheduled" | "manual";
   senderLastSeen?: Date;
 }): Promise<EmailResult & { templateUsed?: string }> {
-  const { renderDisclosureTemplate } = await import('./templates');
+  const { renderDisclosureTemplate } = await import("./templates");
 
   const template = renderDisclosureTemplate(disclosureData);
 
@@ -386,19 +402,19 @@ export async function sendSecretDisclosureEmail(disclosureData: {
     subject: template.subject,
     html: template.html,
     text: template.text,
-    priority: 'high',
+    priority: "high",
     headers: {
-      'X-Priority': '1',
-      'X-MSMail-Priority': 'High',
-      'Importance': 'high'
+      "X-Priority": "1",
+      "X-MSMail-Priority": "High",
+      "Importance": "high",
     },
-    trackDelivery: true
+    trackDelivery: true,
   });
 
   if (result.success) {
     return {
       ...result,
-      templateUsed: 'disclosure'
+      templateUsed: "disclosure",
     };
   }
 
@@ -408,16 +424,18 @@ export async function sendSecretDisclosureEmail(disclosureData: {
 /**
  * Get delivery status for a message
  */
-export async function getDeliveryStatus(messageId: string): Promise<DeliveryStatus> {
+export async function getDeliveryStatus(
+  messageId: string,
+): Promise<DeliveryStatus> {
   // Mock implementation - in production this would integrate with SendGrid Events API
   return {
     messageId,
-    status: 'delivered',
+    status: "delivered",
     deliveredAt: new Date(),
     events: [
-      { type: 'sent', timestamp: new Date(Date.now() - 60000) },
-      { type: 'delivered', timestamp: new Date() }
-    ]
+      { type: "sent", timestamp: new Date(Date.now() - 60000) },
+      { type: "delivered", timestamp: new Date() },
+    ],
   };
 }
 
@@ -425,17 +443,17 @@ export async function getDeliveryStatus(messageId: string): Promise<DeliveryStat
  * Format email template (re-exported from templates)
  */
 export async function formatEmailTemplate(
-  templateType: 'verification' | 'reminder' | 'disclosure',
-  data: any
+  templateType: "verification" | "reminder" | "disclosure",
+  data: any,
 ): Promise<{ subject: string; html: string; text: string }> {
-  const templates = await import('./templates');
+  const templates = await import("./templates");
 
   switch (templateType) {
-    case 'verification':
+    case "verification":
       return templates.renderVerificationTemplate(data);
-    case 'reminder':
+    case "reminder":
       return templates.renderReminderTemplate(data);
-    case 'disclosure':
+    case "disclosure":
       return templates.renderDisclosureTemplate(data);
     default:
       throw new Error(`Unknown template type: ${templateType}`);

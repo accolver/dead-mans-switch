@@ -1,13 +1,18 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { useToast } from '@/hooks/use-toast'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, CheckCircle2, AlertCircle, Loader2, Clock } from 'lucide-react'
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
+import { AlertCircle, CheckCircle2, Clock, Loader2, Mail } from "lucide-react"
+import { useSession } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useState } from "react"
 
 export function EmailVerificationPageNextAuth() {
   const router = useRouter()
@@ -28,9 +33,10 @@ export function EmailVerificationPageNextAuth() {
   const RATE_LIMIT_SECONDS = 60
   const SUCCESS_REDIRECT_DELAY = 2000
 
-  const email = searchParams.get('email') || session?.user?.email || ''
-  const token = searchParams.get('token')
-  const callbackUrl = searchParams.get('callbackUrl') || searchParams.get('next') || '/dashboard'
+  const email = searchParams.get("email") || session?.user?.email || ""
+  const token = searchParams.get("token")
+  const callbackUrl =
+    searchParams.get("callbackUrl") || searchParams.get("next") || "/dashboard"
 
   // Helper functions
   const getRemainingCooldownTime = () => {
@@ -49,12 +55,12 @@ export function EmailVerificationPageNextAuth() {
   useEffect(() => {
     if (token && email) {
       handleTokenVerification(token, email)
-    } else if (status === 'authenticated' && session?.user?.id) {
+    } else if (status === "authenticated" && (session?.user as any)?.id) {
       checkVerificationStatus()
     } else {
       setChecking(false)
     }
-  }, [token, email, status, session?.user?.id])
+  }, [token, email, status, (session?.user as any)?.id])
 
   // Update countdown timer
   useEffect(() => {
@@ -71,10 +77,10 @@ export function EmailVerificationPageNextAuth() {
     setError(null)
 
     try {
-      const response = await fetch('/api/auth/verification-status', {
-        method: 'GET',
+      const response = await fetch("/api/auth/verification-status", {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       })
 
@@ -90,60 +96,63 @@ export function EmailVerificationPageNextAuth() {
         // User is not verified, show verification page
         setChecking(false)
       } else {
-        setError(result.error || 'Failed to check verification status')
+        setError(result.error || "Failed to check verification status")
         setChecking(false)
       }
     } catch (err) {
-      console.error('Verification status check error:', err)
-      setError('Network error. Please try again.')
+      console.error("Verification status check error:", err)
+      setError("Network error. Please try again.")
       setChecking(false)
     }
   }, [router, callbackUrl])
 
-  const handleTokenVerification = useCallback(async (verificationToken: string, emailAddress: string) => {
-    setLoading(true)
-    setError(null)
+  const handleTokenVerification = useCallback(
+    async (verificationToken: string, emailAddress: string) => {
+      setLoading(true)
+      setError(null)
 
-    try {
-      const response = await fetch('/api/auth/verify-email-nextauth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: verificationToken,
-          email: emailAddress,
-        }),
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        setSuccess(true)
-        toast({
-          title: 'Email verified!',
-          description: 'Your email address has been successfully verified.',
+      try {
+        const response = await fetch("/api/auth/verify-email-nextauth", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token: verificationToken,
+            email: emailAddress,
+          }),
         })
 
-        // Brief delay to show success message, then redirect
-        setTimeout(() => {
-          router.push(callbackUrl)
-        }, SUCCESS_REDIRECT_DELAY)
-      } else {
-        setError(result.error || 'Verification failed')
+        const result = await response.json()
+
+        if (result.success) {
+          setSuccess(true)
+          toast({
+            title: "Email verified!",
+            description: "Your email address has been successfully verified.",
+          })
+
+          // Brief delay to show success message, then redirect
+          setTimeout(() => {
+            router.push(callbackUrl)
+          }, SUCCESS_REDIRECT_DELAY)
+        } else {
+          setError(result.error || "Verification failed")
+        }
+      } catch (err) {
+        console.error("Verification error:", err)
+        setError("Network error. Please try again.")
+      } finally {
+        setLoading(false)
+        setChecking(false)
       }
-    } catch (err) {
-      console.error('Verification error:', err)
-      setError('Network error. Please try again.')
-    } finally {
-      setLoading(false)
-      setChecking(false)
-    }
-  }, [router, callbackUrl, toast])
+    },
+    [router, callbackUrl, toast],
+  )
 
   const handleResendVerification = async () => {
     if (!email) {
-      setError('Email address is required')
+      setError("Email address is required")
       return
     }
 
@@ -155,8 +164,12 @@ export function EmailVerificationPageNextAuth() {
     const now = Date.now()
     const rateLimitMs = RATE_LIMIT_SECONDS * 1000
     if (now - lastResendTime < rateLimitMs) {
-      const remainingTime = Math.ceil((rateLimitMs - (now - lastResendTime)) / 1000)
-      setError(`Please wait ${remainingTime} seconds before requesting another email`)
+      const remainingTime = Math.ceil(
+        (rateLimitMs - (now - lastResendTime)) / 1000,
+      )
+      setError(
+        `Please wait ${remainingTime} seconds before requesting another email`,
+      )
       return
     }
 
@@ -165,10 +178,10 @@ export function EmailVerificationPageNextAuth() {
     setLastResendTime(now)
 
     try {
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
       })
@@ -177,33 +190,37 @@ export function EmailVerificationPageNextAuth() {
 
       if (result.success) {
         toast({
-          title: 'Email sent',
-          description: 'A new verification email has been sent to your email address.',
+          title: "Email sent",
+          description:
+            "A new verification email has been sent to your email address.",
         })
       } else {
-        setError(result.error || 'Failed to resend verification email')
+        setError(result.error || "Failed to resend verification email")
       }
     } catch (err) {
-      console.error('Resend error:', err)
-      setError('Network error. Please try again.')
+      console.error("Resend error:", err)
+      setError("Network error. Please try again.")
     } finally {
       setResendingEmail(false)
     }
   }
 
-  if (status === 'loading' || checking) {
+  if (status === "loading" || checking) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex items-center space-x-2">
-          <Loader2 className="h-4 w-4 animate-spin" data-testid="loading-spinner" />
+          <Loader2
+            className="h-4 w-4 animate-spin"
+            data-testid="loading-spinner"
+          />
           <span>Checking verification status...</span>
         </div>
       </div>
     )
   }
 
-  if (status === 'unauthenticated') {
-    router.push('/sign-in')
+  if (status === "unauthenticated") {
+    router.push("/sign-in")
     return null
   }
 
@@ -212,16 +229,19 @@ export function EmailVerificationPageNextAuth() {
       <div className="flex min-h-screen items-center justify-center">
         <Card data-testid="verification-card">
           <CardContent className="pt-6">
-            <div className="text-center space-y-4">
+            <div className="space-y-4 text-center">
               <CheckCircle2
-                className="h-16 w-16 text-green-600 mx-auto"
+                className="mx-auto h-16 w-16 text-green-600"
                 aria-label="Success checkmark"
                 role="img"
               />
               <div>
-                <h1 className="text-lg font-semibold text-green-600">Email Verified!</h1>
-                <p className="text-sm text-muted-foreground">
-                  Your email address has been successfully verified. Redirecting...
+                <h1 className="text-lg font-semibold text-green-600">
+                  Email Verified!
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  Your email address has been successfully verified.
+                  Redirecting...
                 </p>
               </div>
             </div>
@@ -234,16 +254,19 @@ export function EmailVerificationPageNextAuth() {
   return (
     <div
       data-testid="verification-container"
-      className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-16"
+      className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-16"
     >
       <Card className="w-full max-w-md" data-testid="verification-card">
         <CardHeader className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Mail className="h-6 w-6 text-blue-600" />
           </div>
-          <h1 className="text-2xl font-bold text-card-foreground">Verify your email address</h1>
+          <h1 className="text-card-foreground text-2xl font-bold">
+            Verify your email address
+          </h1>
           <CardDescription>
-            We need to verify your email address before you can access the application.
+            We need to verify your email address before you can access the
+            application.
           </CardDescription>
         </CardHeader>
 
@@ -257,28 +280,29 @@ export function EmailVerificationPageNextAuth() {
             className={error ? "" : "sr-only"}
           >
             <AlertCircle className="h-4 w-4" aria-hidden="true" />
-            <AlertDescription>
-              {error || "No errors"}
-            </AlertDescription>
+            <AlertDescription>{error || "No errors"}</AlertDescription>
           </Alert>
 
-          <div className="text-center space-y-4">
+          <div className="space-y-4 text-center">
             <p className="text-sm text-gray-600">
-              Please check your email at{' '}
-              <span className="font-medium">{email}</span>{' '}
-              and click the verification link.
+              Please check your email at{" "}
+              <span className="font-medium">{email}</span> and click the
+              verification link.
             </p>
 
             {loading && (
-              <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" data-testid="loading-spinner" />
+              <div className="text-muted-foreground flex items-center justify-center space-x-2 text-sm">
+                <Loader2
+                  className="h-4 w-4 animate-spin"
+                  data-testid="loading-spinner"
+                />
                 <span>Verifying...</span>
               </div>
             )}
           </div>
 
-          <div className="text-center space-y-3">
-            <p className="text-sm text-muted-foreground">
+          <div className="space-y-3 text-center">
+            <p className="text-muted-foreground text-sm">
               Didn't receive the email? Check your spam folder.
             </p>
 
@@ -292,23 +316,26 @@ export function EmailVerificationPageNextAuth() {
             >
               {resendingEmail ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" data-testid="loading-spinner" />
+                  <Loader2
+                    className="mr-2 h-4 w-4 animate-spin"
+                    data-testid="loading-spinner"
+                  />
                   Sending...
                 </>
               ) : getRemainingCooldownTime() > 0 ? (
                 <>
-                  <Clock className="h-4 w-4 mr-2" />
+                  <Clock className="mr-2 h-4 w-4" />
                   Wait {getRemainingCooldownTime()}s
                 </>
               ) : (
-                'Resend verification email'
+                "Resend verification email"
               )}
             </Button>
           </div>
 
-          <div className="pt-4 border-t space-y-3">
+          <div className="space-y-3 border-t pt-4">
             <Button
-              onClick={() => router.push('/sign-in')}
+              onClick={() => router.push("/sign-in")}
               variant="ghost"
               className="w-full text-gray-600"
               tabIndex={0}

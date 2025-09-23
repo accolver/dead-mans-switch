@@ -196,17 +196,9 @@ variable "btcpay_webhook_secret" {
   sensitive   = true
 }
 
-# Legacy Supabase variables (temporary placeholders for migration)
-# TODO: Remove these after completing migration from Supabase to Cloud SQL
-variable "next_public_supabase_url" {
-  description = "Supabase URL (deprecated - use Cloud SQL instead)"
-  type        = string
-  default     = ""
-}
-
-variable "supabase_service_role_key" {
-  description = "Supabase service role key (deprecated - use Cloud SQL instead)"
+# Scheduler auth secret for calling Next.js cron endpoints
+variable "cron_secret" {
+  description = "Bearer secret used by Cloud Scheduler to call Next.js cron endpoints"
   type        = string
   sensitive   = true
-  default     = ""
 }

@@ -29,7 +29,7 @@ reset-and-seed:
 	@if [ -z "$$ENCRYPTION_KEY" ]; then \
 		echo "❌ Error: ENCRYPTION_KEY environment variable is required"; \
 		echo "💡 Set it in your .envrc file or export it"; \
-		echo "💡 Example: export ENCRYPTION_KEY=0ipPbGjZ+qwqrzR5xPkMPrP+NgkKqfef/Stoh/dRD90="; \
+		echo "💡 Example: export ENCRYPTION_KEY=generate-an-encryption-key"; \
 		exit 1; \
 	fi
 	@if [ -z "$$SUPABASE_SERVICE_ROLE_KEY" ]; then \

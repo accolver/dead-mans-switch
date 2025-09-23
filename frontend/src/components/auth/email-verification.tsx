@@ -1,20 +1,26 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/hooks/use-toast'
-import { CheckCircle2, XCircle, Loader2, Mail, Clock } from 'lucide-react'
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import {
-  verifyEmailWithOTP,
-  checkEmailVerificationStatus,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
+import {
+  getEmailVerificationStatus,
   resendVerificationEmail,
+  verifyEmailWithOTP,
   type EmailVerificationResult,
-  type EmailVerificationStatus
-} from '@/lib/email-verification'
+  type EmailVerificationStatus,
+} from "@/lib/email-verification"
+import { CheckCircle2, Clock, Loader2, Mail, XCircle } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 
 interface OTPVerificationFormProps {
   email: string
@@ -22,15 +28,19 @@ interface OTPVerificationFormProps {
   onError: (error: string) => void
 }
 
-export function OTPVerificationForm({ email, onSuccess, onError }: OTPVerificationFormProps) {
-  const [otp, setOtp] = useState('')
+export function OTPVerificationForm({
+  email,
+  onSuccess,
+  onError,
+}: OTPVerificationFormProps) {
+  const [otp, setOtp] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (otp.length !== 6) {
-      onError('Please enter a valid 6-digit code')
+      onError("Please enter a valid 6-digit code")
       return
     }
 
@@ -41,10 +51,10 @@ export function OTPVerificationForm({ email, onSuccess, onError }: OTPVerificati
       if (result.success) {
         onSuccess(result)
       } else {
-        onError(result.error || 'Verification failed')
+        onError(result.error || "Verification failed")
       }
     } catch {
-      onError('An unexpected error occurred')
+      onError("An unexpected error occurred")
     } finally {
       setLoading(false)
     }
@@ -52,7 +62,7 @@ export function OTPVerificationForm({ email, onSuccess, onError }: OTPVerificati
 
   const handleOtpChange = (value: string) => {
     // Only allow numbers and limit to 6 digits
-    const numericValue = value.replace(/\D/g, '').slice(0, 6)
+    const numericValue = value.replace(/\D/g, "").slice(0, 6)
     setOtp(numericValue)
   }
 
@@ -70,9 +80,9 @@ export function OTPVerificationForm({ email, onSuccess, onError }: OTPVerificati
           onChange={(e) => handleOtpChange(e.target.value)}
           disabled={loading}
           maxLength={6}
-          className="text-center text-lg font-mono tracking-widest"
+          className="text-center font-mono text-lg tracking-widest"
         />
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Enter the 6-digit code sent to {email}
         </p>
       </div>
@@ -88,7 +98,7 @@ export function OTPVerificationForm({ email, onSuccess, onError }: OTPVerificati
             Verifying...
           </>
         ) : (
-          'Verify Email'
+          "Verify Email"
         )}
       </Button>
     </form>
@@ -99,14 +109,16 @@ interface EmailVerificationStatusProps {
   showIcon?: boolean
 }
 
-export function EmailVerificationStatus({ showIcon = true }: EmailVerificationStatusProps) {
+export function EmailVerificationStatus({
+  showIcon = true,
+}: EmailVerificationStatusProps) {
   const [status, setStatus] = useState<EmailVerificationStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const result = await checkEmailVerificationStatus()
+        const result = await getEmailVerificationStatus()
         setStatus(result)
       } finally {
         setLoading(false)
@@ -118,7 +130,10 @@ export function EmailVerificationStatus({ showIcon = true }: EmailVerificationSt
 
   if (loading) {
     return (
-      <div className="flex items-center space-x-2" data-testid="loading-spinner">
+      <div
+        className="flex items-center space-x-2"
+        data-testid="loading-spinner"
+      >
         <Loader2 className="h-4 w-4 animate-spin" />
         <span>Checking verification status...</span>
       </div>
@@ -131,15 +146,22 @@ export function EmailVerificationStatus({ showIcon = true }: EmailVerificationSt
 
   return (
     <div className="flex items-center space-x-2">
-      {showIcon && (
-        status.isVerified ? (
-          <CheckCircle2 className="h-4 w-4 text-green-600" data-testid="verified-icon" />
+      {showIcon &&
+        (status.isVerified ? (
+          <CheckCircle2
+            className="h-4 w-4 text-green-600"
+            data-testid="verified-icon"
+          />
         ) : (
-          <XCircle className="h-4 w-4 text-orange-600" data-testid="unverified-icon" />
-        )
-      )}
-      <span className={status.isVerified ? 'text-green-600' : 'text-orange-600'}>
-        {status.isVerified ? 'Email verified' : 'Email not verified'}
+          <XCircle
+            className="h-4 w-4 text-orange-600"
+            data-testid="unverified-icon"
+          />
+        ))}
+      <span
+        className={status.isVerified ? "text-green-600" : "text-orange-600"}
+      >
+        {status.isVerified ? "Email verified" : "Email not verified"}
       </span>
     </div>
   )
@@ -156,7 +178,7 @@ export function ResendVerificationButton({
   email,
   onSuccess,
   onError,
-  cooldownSeconds = 60
+  cooldownSeconds = 60,
 }: ResendVerificationButtonProps) {
   const [loading, setLoading] = useState(false)
   const [cooldown, setCooldown] = useState(0)
@@ -164,7 +186,7 @@ export function ResendVerificationButton({
 
   useEffect(() => {
     if (cooldown > 0) {
-      const timer = setTimeout(() => setCooldown(c => c - 1), 1000)
+      const timer = setTimeout(() => setCooldown((c) => c - 1), 1000)
       return () => clearTimeout(timer)
     }
   }, [cooldown])
@@ -177,25 +199,26 @@ export function ResendVerificationButton({
       if (result.success) {
         setCooldown(cooldownSeconds)
         toast({
-          title: 'Email sent',
-          description: 'Verification email has been sent. Please check your inbox.',
+          title: "Email sent",
+          description:
+            "Verification email has been sent. Please check your inbox.",
         })
         onSuccess?.()
       } else {
-        const errorMessage = result.error || 'Failed to resend email'
+        const errorMessage = result.error || "Failed to resend email"
         toast({
-          title: 'Error',
+          title: "Error",
           description: errorMessage,
-          variant: 'destructive',
+          variant: "destructive",
         })
         onError?.(errorMessage)
       }
     } catch {
-      const errorMessage = 'An unexpected error occurred'
+      const errorMessage = "An unexpected error occurred"
       toast({
-        title: 'Error',
+        title: "Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       })
       onError?.(errorMessage)
     } finally {
@@ -241,7 +264,7 @@ interface EmailVerificationPromptProps {
 export function EmailVerificationPrompt({
   email,
   onVerificationComplete,
-  onCancel
+  onCancel,
 }: EmailVerificationPromptProps) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -251,8 +274,8 @@ export function EmailVerificationPrompt({
     setSuccess(true)
     setError(null)
     toast({
-      title: 'Email verified!',
-      description: 'Your email address has been successfully verified.',
+      title: "Email verified!",
+      description: "Your email address has been successfully verified.",
     })
 
     // Brief delay to show success message before completing
@@ -274,11 +297,13 @@ export function EmailVerificationPrompt({
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto" />
+          <div className="space-y-4 text-center">
+            <CheckCircle2 className="mx-auto h-16 w-16 text-green-600" />
             <div>
-              <h3 className="text-lg font-semibold text-green-600">Email Verified!</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-lg font-semibold text-green-600">
+                Email Verified!
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 Redirecting you to the dashboard...
               </p>
             </div>
@@ -289,7 +314,7 @@ export function EmailVerificationPrompt({
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="mx-auto w-full max-w-md">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Mail className="h-5 w-5" />
@@ -313,8 +338,8 @@ export function EmailVerificationPrompt({
           onError={handleError}
         />
 
-        <div className="text-center space-y-2">
-          <p className="text-sm text-muted-foreground">
+        <div className="space-y-2 text-center">
+          <p className="text-muted-foreground text-sm">
             Didn't receive the email? Check your spam folder.
           </p>
 
@@ -326,7 +351,7 @@ export function EmailVerificationPrompt({
         </div>
 
         {onCancel && (
-          <div className="pt-4 border-t">
+          <div className="border-t pt-4">
             <Button
               type="button"
               variant="ghost"

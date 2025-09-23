@@ -1,10 +1,16 @@
 import { db } from "@/lib/db/drizzle";
-import { userSubscriptions, subscriptionTiers, subscriptionStatusEnum, subscriptionTierEnum } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import {
+  subscriptionStatusEnum,
+  subscriptionTierEnum,
+  subscriptionTiers,
+  userSubscriptions,
+} from "@/lib/db/schema";
+import { and, eq } from "drizzle-orm";
 import { emailService } from "./email-service";
 
 export type SubscriptionProvider = "stripe" | "btcpay";
-export type SubscriptionStatus = typeof subscriptionStatusEnum.enumValues[number];
+export type SubscriptionStatus =
+  typeof subscriptionStatusEnum.enumValues[number];
 export type SubscriptionTier = typeof subscriptionTierEnum.enumValues[number];
 
 export interface CreateSubscriptionData {
@@ -36,7 +42,7 @@ class SubscriptionService {
         throw new Error(`Tier ${data.tierName} not found`);
       }
 
-      // Create subscription record
+      // Insert full record (cast for Drizzle typing quirks)
       const [subscription] = await db
         .insert(userSubscriptions)
         .values({
@@ -51,7 +57,7 @@ class SubscriptionService {
           cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
           createdAt: new Date(),
           updatedAt: new Date(),
-        })
+        } as any)
         .returning();
 
       // Send confirmation email (don't await to avoid blocking)
@@ -152,8 +158,8 @@ class SubscriptionService {
         .where(
           and(
             eq(userSubscriptions.userId, userId),
-            eq(userSubscriptions.status, "active")
-          )
+            eq(userSubscriptions.status, "active"),
+          ),
         )
         .limit(1);
 
@@ -210,7 +216,7 @@ class SubscriptionService {
 
   async getSubscriptionByProviderSubscriptionId(
     provider: SubscriptionProvider,
-    providerSubscriptionId: string
+    providerSubscriptionId: string,
   ) {
     try {
       const [subscription] = await db
@@ -219,14 +225,20 @@ class SubscriptionService {
         .where(
           and(
             eq(userSubscriptions.provider, provider),
-            eq(userSubscriptions.providerSubscriptionId, providerSubscriptionId)
-          )
+            eq(
+              userSubscriptions.providerSubscriptionId,
+              providerSubscriptionId,
+            ),
+          ),
         )
         .limit(1);
 
       return subscription || null;
     } catch (error) {
-      console.error("Failed to get subscription by provider subscription ID:", error);
+      console.error(
+        "Failed to get subscription by provider subscription ID:",
+        error,
+      );
       throw error;
     }
   }
@@ -274,7 +286,7 @@ class SubscriptionService {
       provider: SubscriptionProvider;
       tierName: SubscriptionTier;
       status: SubscriptionStatus;
-    }
+    },
   ) {
     try {
       await emailService.sendSubscriptionConfirmation(userId, {
@@ -350,7 +362,9 @@ class SubscriptionService {
 
   private async handleSubscriptionUpdate(event: any, userId: string) {
     const subscription = event.data.object;
-    const tier = this.getTierFromStripePrice(subscription.items.data[0].price.id);
+    const tier = this.getTierFromStripePrice(
+      subscription.items.data[0].price.id,
+    );
 
     const subscriptionData: CreateSubscriptionData = {
       userId,
@@ -418,10 +432,12 @@ class SubscriptionService {
         provider: "btcpay",
         providerCustomerId: null,
         providerSubscriptionId: invoice.id,
-        tierName: "pro", // This should come from metadata
+        tierName: (metadata.tierName as SubscriptionTier) || "basic", // fallback
         status: "active",
         currentPeriodStart: new Date(),
-        currentPeriodEnd: this.calculateNextBillingDate(metadata.interval || "month"),
+        currentPeriodEnd: this.calculateNextBillingDate(
+          metadata.interval || "month",
+        ),
       };
 
       return await this.createSubscription(subscriptionData);

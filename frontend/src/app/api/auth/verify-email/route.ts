@@ -1,52 +1,61 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { db } from '@/lib/db/drizzle'
-import { users, verificationTokens } from '@/lib/db/schema'
-import { eq, and } from 'drizzle-orm'
-import { checkRateLimit } from '@/lib/auth/rate-limiting'
+import { checkRateLimit } from "@/lib/auth/rate-limiting";
+import { db } from "@/lib/db/drizzle";
+import { users, verificationTokens } from "@/lib/db/schema";
+import { and, eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 const verifyEmailSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  token: z.string().min(1, 'Token is required')
-})
+  email: z.string().email("Invalid email address"),
+  token: z.string().min(1, "Token is required"),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
     // Validate request body
-    const validation = verifyEmailSchema.safeParse(body)
+    const validation = verifyEmailSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Email and token are required',
-          details: validation.error.errors
+          error: "Email and token are required",
+          details: validation.error.errors,
         },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
-    const { email, token } = validation.data
-    const normalizedEmail = email.toLowerCase().trim()
+    const { email, token } = validation.data;
+    const normalizedEmail = email.toLowerCase().trim();
 
     // Check rate limit
-    const rateLimitResult = await checkRateLimit('verify-email', normalizedEmail)
+    const rateLimitResult = await checkRateLimit(
+      "verify-email",
+      normalizedEmail,
+    );
     if (!rateLimitResult.allowed) {
       const response = NextResponse.json(
         {
           success: false,
-          error: 'Too many verification attempts. Please try again later.',
-          retryAfter: rateLimitResult.retryAfter
+          error: "Too many verification attempts. Please try again later.",
+          retryAfter: rateLimitResult.retryAfter,
         },
-        { status: 429 }
-      )
+        { status: 429 },
+      );
 
-      response.headers.set('Retry-After', rateLimitResult.retryAfter?.toString() || '300')
-      response.headers.set('X-RateLimit-Remaining', '0')
-      response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toISOString())
+      response.headers.set(
+        "Retry-After",
+        rateLimitResult.retryAfter?.toString() || "300",
+      );
+      response.headers.set("X-RateLimit-Remaining", "0");
+      response.headers.set(
+        "X-RateLimit-Reset",
+        rateLimitResult.resetTime.toISOString(),
+      );
 
-      return response
+      return response;
     }
 
     // Look up verification token
@@ -55,19 +64,19 @@ export async function POST(request: NextRequest) {
       .from(verificationTokens)
       .where(and(
         eq(verificationTokens.identifier, normalizedEmail),
-        eq(verificationTokens.token, token)
+        eq(verificationTokens.token, token),
       ))
-      .limit(1)
+      .limit(1);
 
-    const verificationToken = tokenResult[0]
+    const verificationToken = tokenResult[0];
     if (!verificationToken) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid or expired verification token'
+          error: "Invalid or expired verification token",
         },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     // Check if token is expired
@@ -75,15 +84,15 @@ export async function POST(request: NextRequest) {
       // Clean up expired token
       await db
         .delete(verificationTokens)
-        .where(eq(verificationTokens.token, token))
+        .where(eq(verificationTokens.token, token));
 
       return NextResponse.json(
         {
           success: false,
-          error: 'Verification token has expired'
+          error: "Verification token has expired",
         },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     // Look up user
@@ -91,17 +100,17 @@ export async function POST(request: NextRequest) {
       .select()
       .from(users)
       .where(eq(users.email, normalizedEmail))
-      .limit(1)
+      .limit(1);
 
-    const user = userResult[0]
+    const user = userResult[0];
     if (!user) {
       return NextResponse.json(
         {
           success: false,
-          error: 'User not found'
+          error: "User not found",
         },
-        { status: 404 }
-      )
+        { status: 404 },
+      );
     }
 
     // Check if user is already verified
@@ -109,22 +118,28 @@ export async function POST(request: NextRequest) {
       // Still clean up the token
       await db
         .delete(verificationTokens)
-        .where(eq(verificationTokens.token, token))
+        .where(eq(verificationTokens.token, token));
 
       const response = NextResponse.json({
         success: true,
         verified: true,
-        message: 'Email is already verified',
+        message: "Email is already verified",
         user: {
           id: user.id,
-          email: user.email
-        }
-      })
+          email: user.email,
+        },
+      });
 
-      response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
-      response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toISOString())
+      response.headers.set(
+        "X-RateLimit-Remaining",
+        rateLimitResult.remaining.toString(),
+      );
+      response.headers.set(
+        "X-RateLimit-Reset",
+        rateLimitResult.resetTime.toISOString(),
+      );
 
-      return response
+      return response;
     }
 
     // Update user as verified and clean up token
@@ -134,42 +149,49 @@ export async function POST(request: NextRequest) {
         .update(users)
         .set({
           emailVerified: new Date(),
-          updatedAt: new Date()
-        })
+          updatedAt: new Date(),
+        } as any)
         .where(eq(users.id, user.id)),
 
       // Delete the used verification token
       db
         .delete(verificationTokens)
-        .where(eq(verificationTokens.token, token))
-    ])
+        .where(eq(verificationTokens.token, token)),
+    ]);
 
-    console.log(`[VerifyEmail] Successfully verified email for user: ${user.id}`)
+    console.log(
+      `[VerifyEmail] Successfully verified email for user: ${user.id}`,
+    );
 
     const response = NextResponse.json({
       success: true,
       verified: true,
       user: {
         id: user.id,
-        email: user.email
-      }
-    })
+        email: user.email,
+      },
+    });
 
     // Add rate limit headers
-    response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString())
-    response.headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toISOString())
+    response.headers.set(
+      "X-RateLimit-Remaining",
+      rateLimitResult.remaining.toString(),
+    );
+    response.headers.set(
+      "X-RateLimit-Reset",
+      rateLimitResult.resetTime.toISOString(),
+    );
 
-    return response
-
+    return response;
   } catch (error) {
-    console.error('[VerifyEmail] Unexpected error:', error)
+    console.error("[VerifyEmail] Unexpected error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: 'An unexpected error occurred during verification'
+        error: "An unexpected error occurred during verification",
       },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
 }

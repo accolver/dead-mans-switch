@@ -1,6 +1,6 @@
-import { db } from '@/lib/db/drizzle';
-import { users, verificationTokens } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { db } from "@/lib/db/drizzle";
+import { users, verificationTokens } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 /**
  * Generate a secure verification token using Web Crypto API (Edge Runtime compatible)
@@ -13,7 +13,7 @@ function generateVerificationToken(): string {
     crypto.getRandomValues(array);
 
     // Check if we got actual random values (not all zeros)
-    const hasRandomValues = array.some(byte => byte !== 0);
+    const hasRandomValues = array.some((byte) => byte !== 0);
     if (!hasRandomValues) {
       // Fallback for test environments where crypto might return zeros
       for (let i = 0; i < array.length; i++) {
@@ -28,7 +28,9 @@ function generateVerificationToken(): string {
   }
 
   // Convert to hex string
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 /**
@@ -55,7 +57,7 @@ export async function createVerificationToken(email: string): Promise<{
     if (!user) {
       return {
         success: false,
-        error: 'User not found'
+        error: "User not found",
       };
     }
 
@@ -63,7 +65,7 @@ export async function createVerificationToken(email: string): Promise<{
     if (user.emailVerified) {
       return {
         success: false,
-        error: 'Email is already verified'
+        error: "Email is already verified",
       };
     }
 
@@ -82,21 +84,25 @@ export async function createVerificationToken(email: string): Promise<{
       .values({
         identifier: normalizedEmail,
         token,
-        expires
+        expires,
       });
 
-    console.log(`[EmailVerification] Created verification token for: ${normalizedEmail}`);
+    console.log(
+      `[EmailVerification] Created verification token for: ${normalizedEmail}`,
+    );
 
     return {
       success: true,
-      token
+      token,
     };
-
   } catch (error) {
-    console.error('[EmailVerification] Error creating verification token:', error);
+    console.error(
+      "[EmailVerification] Error creating verification token:",
+      error,
+    );
     return {
       success: false,
-      error: 'Failed to create verification token'
+      error: "Failed to create verification token",
     };
   }
 }
@@ -107,7 +113,10 @@ export async function createVerificationToken(email: string): Promise<{
  * @param token - Verification token
  * @returns Promise<{success: boolean, error?: string, emailProvider?: string, messageId?: string, emailData?: any}>
  */
-export async function sendVerificationEmail(email: string, token: string): Promise<{
+export async function sendVerificationEmail(
+  email: string,
+  token: string,
+): Promise<{
   success: boolean;
   error?: string;
   emailProvider?: string;
@@ -123,12 +132,16 @@ export async function sendVerificationEmail(email: string, token: string): Promi
 }> {
   try {
     // Use production email service
-    const { sendVerificationEmail: sendProductionEmail } = await import('@/lib/email/email-service');
+    const { sendVerificationEmail: sendProductionEmail } = await import(
+      "@/lib/email/email-service"
+    );
 
     const result = await sendProductionEmail(email, token);
 
     if (result.success) {
-      console.log(`[EmailVerification] Verification email sent to ${email} via ${result.provider} (Message ID: ${result.messageId})`);
+      console.log(
+        `[EmailVerification] Verification email sent to ${email} via ${result.provider} (Message ID: ${result.messageId})`,
+      );
 
       return {
         success: true,
@@ -136,24 +149,27 @@ export async function sendVerificationEmail(email: string, token: string): Promi
         messageId: result.messageId,
         emailData: result.emailData,
         templateUsed: result.templateUsed,
-        developmentMode: result.developmentMode,
-        attempts: result.attempts
+        attempts: (result as any).attempts,
       };
     } else {
-      console.error(`[EmailVerification] Failed to send verification email: ${result.error}`);
+      console.error(
+        `[EmailVerification] Failed to send verification email: ${result.error}`,
+      );
 
       return {
         success: false,
         error: result.error,
-        emailProvider: result.provider
+        emailProvider: result.provider,
       };
     }
-
   } catch (error) {
-    console.error('[EmailVerification] Error sending verification email:', error);
+    console.error(
+      "[EmailVerification] Error sending verification email:",
+      error,
+    );
     return {
       success: false,
-      error: 'Failed to send verification email'
+      error: "Failed to send verification email",
     };
   }
 }
@@ -173,7 +189,7 @@ export async function resendVerificationEmail(email: string): Promise<{
     if (!tokenResult.success || !tokenResult.token) {
       return {
         success: false,
-        error: tokenResult.error || 'Failed to create verification token'
+        error: tokenResult.error || "Failed to create verification token",
       };
     }
 
@@ -182,19 +198,21 @@ export async function resendVerificationEmail(email: string): Promise<{
     if (!emailResult.success) {
       return {
         success: false,
-        error: emailResult.error || 'Failed to send verification email'
+        error: emailResult.error || "Failed to send verification email",
       };
     }
 
     return {
-      success: true
+      success: true,
     };
-
   } catch (error) {
-    console.error('[EmailVerification] Error resending verification email:', error);
+    console.error(
+      "[EmailVerification] Error resending verification email:",
+      error,
+    );
     return {
       success: false,
-      error: 'Failed to resend verification email'
+      error: "Failed to resend verification email",
     };
   }
 }
@@ -228,12 +246,14 @@ export async function checkEmailVerification(email: string): Promise<{
         id: user.id,
         email: user.email,
         name: user.name,
-        emailVerified: user.emailVerified
-      }
+        emailVerified: user.emailVerified,
+      },
     };
-
   } catch (error) {
-    console.error('[EmailVerification] Error checking email verification:', error);
+    console.error(
+      "[EmailVerification] Error checking email verification:",
+      error,
+    );
     return { verified: false };
   }
 }
@@ -258,15 +278,17 @@ export async function cleanupExpiredTokens(): Promise<{
     // For now, return mock result as expected by tests
     return {
       success: true,
-      deletedCount: 5 // Mock result
+      deletedCount: 5, // Mock result
     };
-
   } catch (error) {
-    console.error('[EmailVerification] Error cleaning up expired tokens:', error);
+    console.error(
+      "[EmailVerification] Error cleaning up expired tokens:",
+      error,
+    );
     return {
       success: false,
       deletedCount: 0,
-      error: 'Failed to cleanup expired tokens'
+      error: "Failed to cleanup expired tokens",
     };
   }
 }
@@ -277,7 +299,7 @@ export async function cleanupExpiredTokens(): Promise<{
  * @returns boolean - True if valid format
  */
 export function validateTokenFormat(token: string): boolean {
-  if (!token || typeof token !== 'string') {
+  if (!token || typeof token !== "string") {
     return false;
   }
 

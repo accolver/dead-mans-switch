@@ -1,9 +1,10 @@
 import { EditSecretForm } from "@/components/forms/editSecretForm"
-import { getServerSession } from "next-auth"
 import { authConfig } from "@/lib/auth-config"
 import { getSecret } from "@/lib/db/operations"
-import { notFound, redirect } from "next/navigation"
 import { mapDrizzleSecretToSupabaseShape } from "@/lib/db/secret-mapper"
+import type { Session } from "next-auth"
+import { getServerSession } from "next-auth/next"
+import { notFound, redirect } from "next/navigation"
 
 interface EditSecretPageProps {
   params: Promise<{ id: string }>
@@ -11,7 +12,7 @@ interface EditSecretPageProps {
 
 export default async function EditSecretPage({ params }: EditSecretPageProps) {
   const { id } = await params
-  const session = await getServerSession(authConfig)
+  const session = (await getServerSession(authConfig as any)) as Session | null
 
   if (!session?.user) {
     redirect("/auth/signin")
@@ -36,7 +37,7 @@ export default async function EditSecretPage({ params }: EditSecretPageProps) {
     }
 
     return (
-      <div className="mx-auto sm:px-4 py-8 max-w-3xl">
+      <div className="mx-auto max-w-3xl py-8 sm:px-4">
         <h1 className="mb-6 text-3xl font-bold">Edit Secret</h1>
         <EditSecretForm initialData={initialData} secretId={mapped.id} />
       </div>

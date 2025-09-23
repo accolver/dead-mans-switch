@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NextRequest } from "next/server";
-import { mockSupabaseClient, mockSession, mockSecretsService } from "./setup";
 import { getServerSession } from "next-auth/next";
+import { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiRequest } from "../helpers/next-request";
+import { mockSecretsService } from "./setup";
 
 // Import setup to apply mocks
 import "./setup";
@@ -46,30 +46,20 @@ describe("/api/secrets", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Set up environment variables
-    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
-
     // Reset NextAuth session mock to authenticated state by default
     (getServerSession as any).mockResolvedValue({
       user: {
         id: mockUser.id,
         email: mockUser.email,
-        name: "Test User"
-      }
+        name: "Test User",
+      },
     });
 
     // Reset database service mocks to successful state by default
     mockSecretsService.create.mockResolvedValue({
       id: "secret-123",
       ...validSecretData,
-      userId: mockUser.id
-    });
-
-    // Reset Supabase mocks
-    mockSupabaseClient.auth.getUser.mockResolvedValue({
-      data: { user: mockUser },
-      error: null,
+      userId: mockUser.id,
     });
   });
 
@@ -84,7 +74,7 @@ describe("/api/secrets", () => {
         recipientName: validSecretData.recipient_name,
         recipientEmail: validSecretData.recipient_email,
         contactMethod: validSecretData.contact_method,
-        userId: mockUser.id
+        userId: mockUser.id,
       });
 
       const mockRequest = new NextRequest("http://localhost/api/secrets", {
@@ -111,7 +101,7 @@ describe("/api/secrets", () => {
           sssSharesTotal: 3,
           sssThreshold: 2,
           nextCheckIn: expect.any(Date),
-        })
+        }),
       );
     });
 
@@ -161,7 +151,7 @@ describe("/api/secrets", () => {
         recipientName: plainSecretData.recipient_name,
         recipientEmail: plainSecretData.recipient_email,
         contactMethod: plainSecretData.contact_method,
-        userId: mockUser.id
+        userId: mockUser.id,
       });
 
       const mockRequest = createApiRequest("http://localhost/api/secrets", {
@@ -189,7 +179,7 @@ describe("/api/secrets", () => {
           status: "active",
           sssSharesTotal: 3,
           sssThreshold: 2,
-        })
+        }),
       );
     });
 
@@ -280,7 +270,7 @@ describe("/api/secrets", () => {
         recipientName: validSecretData.recipient_name,
         recipientEmail: validSecretData.recipient_email,
         contactMethod: validSecretData.contact_method,
-        userId: mockUser.id
+        userId: mockUser.id,
       });
 
       const mockRequest = createApiRequest("http://localhost/api/secrets", {
@@ -313,7 +303,7 @@ describe("/api/secrets", () => {
         recipientName: dataWithBothContact.recipient_name,
         recipientEmail: dataWithBothContact.recipient_email,
         contactMethod: dataWithBothContact.contact_method,
-        userId: mockUser.id
+        userId: mockUser.id,
       });
 
       const mockRequest = createApiRequest("http://localhost/api/secrets", {
@@ -329,7 +319,7 @@ describe("/api/secrets", () => {
           recipientEmail: validSecretData.recipient_email,
           recipientPhone: validSecretData.recipient_phone,
           contactMethod: "both",
-        })
+        }),
       );
     });
 
@@ -347,7 +337,7 @@ describe("/api/secrets", () => {
         recipientName: dataWithPhoneContact.recipient_name,
         recipientEmail: null,
         contactMethod: dataWithPhoneContact.contact_method,
-        userId: mockUser.id
+        userId: mockUser.id,
       });
 
       const mockRequest = createApiRequest("http://localhost/api/secrets", {
@@ -363,7 +353,7 @@ describe("/api/secrets", () => {
           recipientEmail: null,
           recipientPhone: validSecretData.recipient_phone,
           contactMethod: "phone",
-        })
+        }),
       );
     });
 

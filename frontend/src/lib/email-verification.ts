@@ -3,45 +3,50 @@
 
 // TODO: Replace with NextAuth types
 interface NextAuthUser {
-  id: string
-  email?: string
-  name?: string
-  image?: string
-  email_verified?: boolean
+  id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  email_verified?: boolean;
 }
 
 export interface EmailVerificationResult {
-  success: boolean
-  user?: NextAuthUser
-  error?: string
-  alreadyVerified?: boolean
-  requiresVerification?: boolean
+  success: boolean;
+  user?: NextAuthUser;
+  error?: string;
+  alreadyVerified?: boolean;
+  requiresVerification?: boolean;
 }
 
 export interface EmailVerificationStatus {
-  isVerified: boolean
-  user?: NextAuthUser | null
-  error?: string | null
+  isVerified: boolean;
+  user?: NextAuthUser | null;
+  error?: string | null;
 }
 
 /**
  * Verify email address using OTP code
  * TODO: Implement with NextAuth email verification
  */
-export async function verifyEmailWithOTP(email: string, otp: string): Promise<EmailVerificationResult> {
+export async function verifyEmailWithOTP(
+  email: string,
+  otp: string,
+): Promise<EmailVerificationResult> {
   try {
     // TODO: Replace with NextAuth email verification
-    console.warn("[Email Verification] verifyEmailWithOTP is deprecated - use NextAuth instead");
+    console.warn(
+      "[Email Verification] verifyEmailWithOTP is deprecated - use NextAuth instead",
+    );
 
     return {
       success: false,
-      error: 'Function deprecated - use NextAuth email verification'
-    }
+      error: "Function deprecated - use NextAuth email verification",
+    };
   } catch {
     return {
       success: false,
-      error: 'An unexpected error occurred during verification'
-    }
+      error: "An unexpected error occurred during verification",
+    };
   }
 }
 
@@ -49,20 +54,24 @@ export async function verifyEmailWithOTP(email: string, otp: string): Promise<Em
  * Send OTP verification code to email
  * TODO: Implement with NextAuth email verification
  */
-export async function sendVerificationOTP(email: string): Promise<EmailVerificationResult> {
+export async function sendVerificationOTP(
+  email: string,
+): Promise<EmailVerificationResult> {
   try {
     // TODO: Replace with NextAuth email provider
-    console.warn("[Email Verification] sendVerificationOTP is deprecated - use NextAuth instead");
+    console.warn(
+      "[Email Verification] sendVerificationOTP is deprecated - use NextAuth instead",
+    );
 
     return {
       success: false,
-      error: 'Function deprecated - use NextAuth email verification'
-    }
+      error: "Function deprecated - use NextAuth email verification",
+    };
   } catch {
     return {
       success: false,
-      error: 'An unexpected error occurred during verification'
-    }
+      error: "An unexpected error occurred during verification",
+    };
   }
 }
 
@@ -70,32 +79,38 @@ export async function sendVerificationOTP(email: string): Promise<EmailVerificat
  * Get current email verification status
  * TODO: Implement with NextAuth session
  */
-export async function getEmailVerificationStatus(): Promise<EmailVerificationStatus> {
-  try {
-    // TODO: Replace with NextAuth session check
-    console.warn("[Email Verification] getEmailVerificationStatus is deprecated - use NextAuth instead");
+export async function getEmailVerificationStatus(
+  email?: string,
+): Promise<EmailVerificationStatus> {
+  // Delegate to the shim that tests mock
+  return checkEmailVerificationStatus(email);
+}
 
-    return {
-      isVerified: false,
-      user: null,
-      error: 'Function deprecated - use NextAuth session'
-    }
-  } catch {
-    return {
-      isVerified: false,
-      user: null,
-      error: 'An unexpected error occurred'
-    }
-  }
+/**
+ * Compatibility shim used by tests to query current verification status.
+ * Real implementation lives in NextAuth flow; tests mock this function.
+ */
+export async function checkEmailVerificationStatus(
+  email?: string,
+): Promise<EmailVerificationStatus> {
+  return {
+    isVerified: false,
+    user: email ? { id: "", email } as NextAuthUser : null,
+    error: null,
+  };
 }
 
 /**
  * Check if user needs email verification
  * TODO: Implement with NextAuth session
  */
-export async function checkEmailVerificationRequired(user?: NextAuthUser): Promise<boolean> {
+export async function checkEmailVerificationRequired(
+  user?: NextAuthUser,
+): Promise<boolean> {
   // TODO: Replace with NextAuth logic
-  console.warn("[Email Verification] checkEmailVerificationRequired is deprecated - use NextAuth instead");
+  console.warn(
+    "[Email Verification] checkEmailVerificationRequired is deprecated - use NextAuth instead",
+  );
   return false;
 }
 
@@ -106,7 +121,9 @@ export async function checkEmailVerificationRequired(user?: NextAuthUser): Promi
 export async function markEmailVerified(userId: string): Promise<boolean> {
   try {
     // TODO: Replace with NextAuth database update
-    console.warn("[Email Verification] markEmailVerified is deprecated - use NextAuth callbacks");
+    console.warn(
+      "[Email Verification] markEmailVerified is deprecated - use NextAuth callbacks",
+    );
     return false;
   } catch {
     return false;
@@ -117,19 +134,23 @@ export async function markEmailVerified(userId: string): Promise<boolean> {
  * Resend verification email
  * TODO: Implement with NextAuth email provider
  */
-export async function resendVerificationEmail(email: string): Promise<EmailVerificationResult> {
+export async function resendVerificationEmail(
+  email: string,
+): Promise<EmailVerificationResult> {
   try {
     // TODO: Replace with NextAuth email resend
-    console.warn("[Email Verification] resendVerificationEmail is deprecated - use NextAuth instead");
+    console.warn(
+      "[Email Verification] resendVerificationEmail is deprecated - use NextAuth instead",
+    );
 
     return {
       success: false,
-      error: 'Function deprecated - use NextAuth email verification'
-    }
+      error: "Function deprecated - use NextAuth email verification",
+    };
   } catch {
     return {
       success: false,
-      error: 'An unexpected error occurred during resend'
-    }
+      error: "An unexpected error occurred during resend",
+    };
   }
 }

@@ -1,23 +1,26 @@
-import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/config'
-import { db } from '@/lib/db/drizzle'
-import { users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { authConfig } from "@/lib/auth-config";
+import { db } from "@/lib/db/drizzle";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import type { Session } from "next-auth";
+import { getServerSession } from "next-auth/next";
+import { NextResponse } from "next/server";
 
 export async function GET(_request: Request) {
   try {
     // Get NextAuth session
-    const session = await getServerSession(authOptions)
+    const session = (await getServerSession(authConfig as any)) as
+      | Session
+      | null;
 
     if (!session?.user?.id) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Not authenticated'
+          error: "Not authenticated",
         },
-        { status: 401 }
-      )
+        { status: 401 },
+      );
     }
 
     // Get user from database
@@ -25,22 +28,26 @@ export async function GET(_request: Request) {
       .select()
       .from(users)
       .where(eq(users.id, session.user.id))
-      .limit(1)
+      .limit(1);
 
-    const user = userResult[0]
+    const user = userResult[0];
     if (!user) {
       return NextResponse.json(
         {
           success: false,
-          error: 'User not found'
+          error: "User not found",
         },
-        { status: 404 }
-      )
+        { status: 404 },
+      );
     }
 
     // Calculate additional metadata
     const now = new Date();
-    const accountAge = user.createdAt ? Math.floor((now.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const accountAge = user.createdAt
+      ? Math.floor(
+        (now.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+      )
+      : 0;
 
     // Return verification status
     return NextResponse.json({
@@ -54,19 +61,19 @@ export async function GET(_request: Request) {
         name: user.name,
         emailVerified: user.emailVerified,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      }
-    })
-
+        updatedAt: user.updatedAt,
+      },
+    });
   } catch (error) {
-    console.error('[VerificationStatus] Unexpected error:', error)
+    console.error("[VerificationStatus] Unexpected error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: 'An unexpected error occurred while checking verification status'
+        error:
+          "An unexpected error occurred while checking verification status",
       },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
 }

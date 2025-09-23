@@ -1,6 +1,13 @@
-import { eq, and, desc, lt } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import { db } from "./connection";
-import { secrets, userContactMethods, type Secret, type SecretInsert, type SecretUpdate, type UserContactMethod } from "./schema";
+import {
+  type Secret,
+  type SecretInsert,
+  secrets,
+  type SecretUpdate,
+  type UserContactMethod,
+  userContactMethods,
+} from "./schema";
 
 // Secrets operations - compatible with existing API
 export async function getAllSecrets(userId: string): Promise<Secret[]> {
@@ -40,11 +47,14 @@ export async function createSecret(secret: SecretInsert): Promise<Secret> {
   return result[0];
 }
 
-export async function updateSecret(id: string, updates: SecretUpdate): Promise<Secret> {
+export async function updateSecret(
+  id: string,
+  updates: SecretUpdate,
+): Promise<Secret> {
   // Create update object with updatedAt
   const updateData: Record<string, unknown> = {
     ...updates,
-    updatedAt: new Date()
+    updatedAt: new Date(),
   };
 
   const result = await db
@@ -78,19 +88,24 @@ export async function getOverdueSecrets(): Promise<Secret[]> {
     .from(secrets)
     .where(and(
       eq(secrets.status, "active"),
-      lt(secrets.nextCheckIn, now)
+      lt(secrets.nextCheckIn, now),
     ));
 
   return result;
 }
 
-export async function getSecretWithOwnership(id: string, userId: string): Promise<Secret> {
+export async function getSecretWithOwnership(
+  id: string,
+  userId: string,
+): Promise<Secret> {
   // This is the same as getSecret - keeping for API compatibility
   return getSecret(id, userId);
 }
 
 // User Contact Methods operations
-export async function getUserContactMethods(userId: string): Promise<UserContactMethod[]> {
+export async function getUserContactMethods(
+  userId: string,
+): Promise<UserContactMethod[]> {
   const result = await db
     .select()
     .from(userContactMethods)
@@ -117,8 +132,8 @@ export async function upsertUserContactMethods(userId: string, data: {
       .update(userContactMethods)
       .set({
         ...data,
-        updatedAt: new Date()
-      })
+        updatedAt: new Date(),
+      } as any)
       .where(eq(userContactMethods.userId, userId))
       .returning();
 
@@ -133,7 +148,7 @@ export async function upsertUserContactMethods(userId: string, data: {
       .insert(userContactMethods)
       .values({
         userId,
-        ...data
+        ...data,
       })
       .returning();
 

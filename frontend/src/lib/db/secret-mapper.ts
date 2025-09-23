@@ -1,4 +1,25 @@
-import type { Secret } from "@/types";
+export type ApiSecret = {
+  id: string;
+  user_id: string;
+  title: string;
+  recipient_name: string;
+  recipient_email: string | null;
+  recipient_phone: string | null;
+  contact_method: "email" | "phone" | "both";
+  check_in_days: number;
+  status: "active" | "paused" | "triggered";
+  server_share: string | null;
+  iv: string | null;
+  auth_tag: string | null;
+  sss_shares_total: number;
+  sss_threshold: number;
+  is_triggered: boolean;
+  last_check_in: string | null;
+  next_check_in: string | null;
+  triggered_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 function toIsoString(value: unknown): string | null {
   if (!value) return null;
@@ -11,7 +32,7 @@ function toIsoString(value: unknown): string | null {
   }
 }
 
-export function mapDrizzleSecretToSupabaseShape(row: any): Secret {
+export function mapDrizzleSecretToSupabaseShape(row: any): ApiSecret {
   return {
     id: row.id,
     user_id: row.userId,

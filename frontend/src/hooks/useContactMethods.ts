@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 export interface ContactMethods {
   email: string;
   phone: string;
-  preferredMethod: "email" | "phone" | "both";
+  telegram_username: string;
+  whatsapp: string;
+  signal: string;
+  preferred_method: "email" | "phone" | "both";
+  check_in_days: number;
 }
 
 export interface ContactMethodsDbInput {
@@ -22,7 +26,7 @@ export function useContactMethods() {
   useEffect(() => {
     async function fetchContactMethods() {
       try {
-        if (!session?.user?.id) {
+        if (!(session?.user as any)?.id) {
           setError("User not authenticated");
           setLoading(false);
           return;
@@ -43,18 +47,18 @@ export function useContactMethods() {
       }
     }
 
-    if (session?.user?.id) {
+    if ((session?.user as any)?.id) {
       fetchContactMethods();
     } else if (session === null) {
       // Session is explicitly null (not loading)
       setError("User not authenticated");
       setLoading(false);
     }
-  }, [session?.user?.id]);
+  }, [(session?.user as any)?.id]);
 
   const saveContactMethods = async (methods: ContactMethodsDbInput) => {
     try {
-      if (!session?.user?.id) {
+      if (!(session?.user as any)?.id) {
         throw new Error("User not authenticated");
       }
 

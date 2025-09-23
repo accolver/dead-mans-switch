@@ -5,9 +5,3 @@ variable "project_id" {
   type        = string
   default     = "test-project"
 }
-
-variable "next_public_supabase_url" {
-  description = "Supabase URL for validation testing"
-  type        = string
-  default     = "https://test.supabase.co"
-}

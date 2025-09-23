@@ -1,23 +1,7 @@
 # Google Cloud Scheduler Jobs for KeyFate Dead Man's Switch
 # These jobs replace the manual trigger-reminders.sh script
 
-locals {
-  # Ensure Supabase URL starts with https:// for Cloud Scheduler compatibility
-  base_supabase_url = var.next_public_supabase_url != "" ? (
-    startswith(var.next_public_supabase_url, "https://") ? var.next_public_supabase_url :
-    startswith(var.next_public_supabase_url, "http://") ? replace(var.next_public_supabase_url, "http://", "https://") :
-    "https://${var.next_public_supabase_url}"
-  ) : "https://placeholder.supabase.co"
-
-  # Construct the Supabase functions URL with validated HTTPS
-  supabase_functions_url = "${local.base_supabase_url}/functions/v1"
-
-  # Common headers for all requests
-  common_headers = {
-    "Authorization" = "Bearer ${var.supabase_service_role_key}"
-    "Content-Type"  = "application/json"
-  }
-}
+locals {}
 
 # Cloud Scheduler job to check and send reminders every 5 minutes
 resource "google_cloud_scheduler_job" "process_reminders" {
@@ -28,9 +12,12 @@ resource "google_cloud_scheduler_job" "process_reminders" {
 
   http_target {
     http_method = "POST"
-    uri         = "${local.supabase_functions_url}/process-reminders"
+    uri         = "${var.next_public_site_url}/api/cron/process-reminders"
 
-    headers = local.common_headers
+    headers = {
+      "Authorization" = "Bearer ${var.cron_secret}"
+      "Content-Type"  = "application/json"
+    }
 
     # Empty body for POST request
     body = base64encode("{}")
@@ -58,9 +45,12 @@ resource "google_cloud_scheduler_job" "check_secrets" {
 
   http_target {
     http_method = "POST"
-    uri         = "${local.supabase_functions_url}/check-secrets"
+    uri         = "${var.next_public_site_url}/api/cron/check-secrets"
 
-    headers = local.common_headers
+    headers = {
+      "Authorization" = "Bearer ${var.cron_secret}"
+      "Content-Type"  = "application/json"
+    }
 
     # Empty body for POST request
     body = base64encode("{}")

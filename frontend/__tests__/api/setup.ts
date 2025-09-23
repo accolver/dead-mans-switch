@@ -38,55 +38,16 @@ vi.mock("next/server", () => ({
   },
 }));
 
-// Mock Supabase client
-const mockSupabaseClient = {
-  auth: {
-    getUser: vi.fn(),
-  },
-  from: vi.fn(() => ({
-    select: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    single: vi.fn(),
-  })),
-  rpc: vi.fn(),
-};
-
-// Mock the new Supabase SSR package
-vi.mock("@supabase/ssr", () => ({
-  createServerClient: vi.fn(() => mockSupabaseClient),
-}));
-
-// Mock the server utils directly
-vi.mock("@/utils/supabase/server", () => ({
-  createClient: vi.fn(() => Promise.resolve(mockSupabaseClient)),
-  createServiceRoleClient: vi.fn(() => mockSupabaseClient),
-}));
-
-// Mock Supabase client package (for client-side usage)
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn(() => mockSupabaseClient),
-}));
-
 // Set up environment variables before any imports
 process.env.NEXT_PUBLIC_SITE_URL = "https://test.example.com";
-process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
-process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
 process.env.ENCRYPTION_KEY = "a".repeat(32); // 32 character key
 
 // Mock environment variables
 vi.mock("@/lib/env", () => ({
   NEXT_PUBLIC_SITE_URL: "https://test.example.com",
-  NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
 }));
 
-vi.mock("@/lib/server-env", () => ({
-  SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-}));
+vi.mock("@/lib/server-env", () => ({}));
 
 // Mock Node.js crypto module
 const mockCrypto = {
@@ -107,7 +68,7 @@ const mockCrypto = {
 
 vi.mock("crypto", () => ({
   default: mockCrypto,
-  ...mockCrypto
+  ...mockCrypto,
 }));
 
 // Mock encryption functions with expected return values
@@ -127,29 +88,29 @@ const mockSession = {
   user: {
     id: "user-123",
     email: "test@example.com",
-    name: "Test User"
-  }
+    name: "Test User",
+  },
 };
 
 vi.mock("next-auth/next", () => ({
-  getServerSession: vi.fn(() => Promise.resolve(mockSession))
+  getServerSession: vi.fn(() => Promise.resolve(mockSession)),
 }));
 
 // Mock database services
 const mockSecretsService = {
-  create: vi.fn()
+  create: vi.fn(),
 };
 
 const mockRobustSecretsService = {
-  create: vi.fn()
+  create: vi.fn(),
 };
 
 vi.mock("@/lib/db/drizzle", () => ({
-  secretsService: mockSecretsService
+  secretsService: mockSecretsService,
 }));
 
 vi.mock("@/lib/db/secrets-service-robust", () => ({
-  RobustSecretsService: vi.fn(() => mockRobustSecretsService)
+  RobustSecretsService: vi.fn(() => mockRobustSecretsService),
 }));
 
 // Mock crypto for encrypt/decrypt routes
@@ -190,4 +151,10 @@ Object.defineProperty(global, "TextDecoder", {
   },
 });
 
-export { mockCookieStore, mockCrypto, mockSupabaseClient, mockSession, mockSecretsService, mockRobustSecretsService };
+export {
+  mockCookieStore,
+  mockCrypto,
+  mockRobustSecretsService,
+  mockSecretsService,
+  mockSession,
+};

@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db/drizzle';
-import { users, verificationTokens } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
-import { z } from 'zod';
+import { db } from "@/lib/db/drizzle";
+import { users, verificationTokens } from "@/lib/db/schema";
+import { and, eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 const verifyEmailSchema = z.object({
-  token: z.string().min(1, 'Token is required'),
-  email: z.string().email('Invalid email address'),
+  token: z.string().min(1, "Token is required"),
+  email: z.string().email("Invalid email address"),
 });
 
 export async function POST(request: NextRequest) {
@@ -19,10 +19,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid request data',
-          details: validation.error.errors
+          error: "Invalid request data",
+          details: validation.error.errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         and(
           eq(verificationTokens.identifier, email),
           eq(verificationTokens.token, token),
-        )
+        ),
       )
       .limit(1);
 
@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid or expired verification token'
+          error: "Invalid or expired verification token",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -61,9 +61,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Verification token has expired'
+          error: "Verification token has expired",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
       .update(users)
       .set({
         emailVerified: new Date(),
-        updatedAt: new Date()
-      })
+        updatedAt: new Date(),
+      } as any)
       .where(eq(users.email, email))
       .returning();
 
@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'User not found'
+          error: "User not found",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -98,18 +98,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       verified: true,
-      message: 'Email successfully verified'
+      message: "Email successfully verified",
     });
-
   } catch (error) {
-    console.error('[VerifyEmail] Unexpected error:', error);
+    console.error("[VerifyEmail] Unexpected error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: 'An unexpected error occurred during verification'
+        error: "An unexpected error occurred during verification",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -2,7 +2,7 @@ import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
 // Configure React Testing Library for React 18
-import { configure } from '@testing-library/react'
+import { configure } from "@testing-library/react";
 
 configure({
   // React 18 automatic batching configuration
@@ -12,31 +12,50 @@ configure({
     return new Error(
       [
         message,
-        '',
-        'Ignored in test environment',
-      ].join('\n')
+        "",
+        "Ignored in test environment",
+      ].join("\n"),
     );
   },
 });
 
-// Mock Next.js router
+// Mock Next.js router with resettable mocks used by many suites
+const mockRouter = {
+  push: vi.fn(),
+  replace: vi.fn(),
+  back: vi.fn(),
+  forward: vi.fn(),
+  refresh: vi.fn(),
+  prefetch: vi.fn(),
+};
+const mockUseRouter = vi.fn(() => mockRouter);
+const mockUseSearchParams = vi.fn(() => new URLSearchParams());
+// Some suites call `.clear()` on the mocked function – provide shim
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(mockUseSearchParams as any).clear = () => {
+  mockUseSearchParams.mockReset();
+};
+
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    prefetch: vi.fn(),
-  }),
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/",
+  useRouter: mockUseRouter,
+  useSearchParams: mockUseSearchParams,
+  usePathname: vi.fn(() => "/"),
 }));
 
 // Mock NextAuth
 vi.mock("next-auth", () => ({
   default: vi.fn(),
   getServerSession: vi.fn(),
+}));
+vi.mock("next-auth/react", () => ({
+  useSession: vi.fn(() => ({
+    status: "unauthenticated",
+    data: null,
+    update: vi.fn(),
+  })),
+  signIn: vi.fn(async () => ({ ok: true, status: 200 })),
+  signOut: vi.fn(async () => ({ ok: true })),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock("next-auth/providers/google", () => ({
@@ -48,10 +67,12 @@ vi.mock("next-auth/providers/google", () => ({
 }));
 
 vi.mock("next-auth/providers/credentials", () => ({
-  default: vi.fn(() => ({
+  default: vi.fn((opts?: any) => ({
     id: "credentials",
     name: "credentials",
     type: "credentials",
+    authorize: opts?.authorize ?? (async () => null),
+    credentials: opts?.credentials ?? {},
   })),
 }));
 
@@ -92,10 +113,16 @@ vi.mock("@/lib/auth/config", () => ({
 }));
 
 // Mock environment variables for NextAuth + Drizzle
-vi.stubEnv("DATABASE_URL", "postgresql://postgres:test_password@localhost:5432/test_db");
+vi.stubEnv(
+  "DATABASE_URL",
+  "postgresql://postgres:test_password@localhost:5432/test_db",
+);
 vi.stubEnv("NEXTAUTH_SECRET", "test-nextauth-secret-32-chars-long");
 vi.stubEnv("NEXTAUTH_URL", "http://localhost:3000");
-vi.stubEnv("GOOGLE_CLIENT_ID", "test-google-client-id.apps.googleusercontent.com");
+vi.stubEnv(
+  "GOOGLE_CLIENT_ID",
+  "test-google-client-id.apps.googleusercontent.com",
+);
 vi.stubEnv("GOOGLE_CLIENT_SECRET", "test-google-client-secret");
 vi.stubEnv(
   "ENCRYPTION_KEY",
@@ -126,3 +153,21 @@ export const mockNextAuth = {
 
 // Make sure no Supabase mocks exist
 export const mockSupabase = undefined;
+
+// Provide a default fetch mock to avoid hanging tests
+if (!global.fetch) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (global as any).fetch = vi.fn(async () => ({
+    json: async () => ({ success: true }),
+  }));
+}
+
+// Suites can mock `@/hooks/use-toast` themselves as needed
+
+// Polyfill URLSearchParams.clear used by some tests
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(URLSearchParams.prototype as any).clear = function () {
+  for (const key of Array.from(this.keys())) {
+    this.delete(key);
+  }
+};

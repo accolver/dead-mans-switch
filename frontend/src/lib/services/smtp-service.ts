@@ -23,7 +23,7 @@ class SMTPService {
     }
 
     const smtpConfig = this.getSMTPConfig();
-    this.transporter = nodemailer.createTransporter(smtpConfig);
+    this.transporter = nodemailer.createTransport(smtpConfig);
 
     // Verify connection
     try {
@@ -42,7 +42,8 @@ class SMTPService {
       const transporter = await this.getTransporter();
 
       const mailOptions = {
-        from: options.from || process.env.SMTP_FROM_EMAIL || "noreply@deadmansswitch.com",
+        from: options.from || process.env.SMTP_FROM_EMAIL ||
+          "noreply@deadmansswitch.com",
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -106,7 +107,9 @@ class SMTPService {
     const domain = process.env.MAILGUN_DOMAIN;
 
     if (!username || !password) {
-      throw new Error("MAILGUN_SMTP_USERNAME and MAILGUN_SMTP_PASSWORD are required for Mailgun");
+      throw new Error(
+        "MAILGUN_SMTP_USERNAME and MAILGUN_SMTP_PASSWORD are required for Mailgun",
+      );
     }
 
     return {
@@ -126,7 +129,9 @@ class SMTPService {
     const region = process.env.AWS_REGION || "us-east-1";
 
     if (!accessKeyId || !secretAccessKey) {
-      throw new Error("AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required for AWS SES");
+      throw new Error(
+        "AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are required for AWS SES",
+      );
     }
 
     return {

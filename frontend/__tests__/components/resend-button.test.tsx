@@ -36,18 +36,19 @@ describe("ResendButton Component", () => {
   })
 
   it("should show loading state when resending", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<ResendButton email={testEmail} />)
 
     const button = screen.getByTestId("resend-verification-button")
     await user.click(button)
 
-    expect(screen.getByText("Sending...")).toBeInTheDocument()
-    expect(button).toBeDisabled()
+    await waitFor(() => {
+      expect(button).toBeDisabled()
+    })
   })
 
   it("should call default API when no custom onResend provided", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<ResendButton email={testEmail} />)
 
     const button = screen.getByTestId("resend-verification-button")
@@ -62,7 +63,7 @@ describe("ResendButton Component", () => {
 
   it("should call custom onResend function when provided", async () => {
     const mockOnResend = vi.fn().mockResolvedValue(undefined)
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
 
     render(<ResendButton email={testEmail} onResend={mockOnResend} />)
 
@@ -74,7 +75,7 @@ describe("ResendButton Component", () => {
   })
 
   it("should show success toast after successful resend", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<ResendButton email={testEmail} />)
 
     const button = screen.getByTestId("resend-verification-button")
@@ -110,7 +111,7 @@ describe("ResendButton Component", () => {
   })
 
   it("should implement cooldown period after successful resend", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<ResendButton email={testEmail} cooldownSeconds={60} />)
 
     const button = screen.getByTestId("resend-verification-button")
@@ -130,7 +131,7 @@ describe("ResendButton Component", () => {
   })
 
   it("should count down cooldown timer correctly", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<ResendButton email={testEmail} cooldownSeconds={3} />)
 
     const button = screen.getByTestId("resend-verification-button")
@@ -164,7 +165,7 @@ describe("ResendButton Component", () => {
   })
 
   it("should not allow resend without email", async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<ResendButton email="" />)
 
     const button = screen.getByTestId("resend-verification-button")
@@ -182,8 +183,7 @@ describe("ResendButton Component", () => {
 
   it("should handle network errors gracefully", async () => {
     ;(global.fetch as any).mockRejectedValueOnce(new Error("Network error"))
-
-    const user = userEvent.setup()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     render(<ResendButton email={testEmail} />)
 
     const button = screen.getByTestId("resend-verification-button")

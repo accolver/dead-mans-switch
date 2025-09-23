@@ -1,12 +1,18 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { checkEmailVerificationStatus } from '@/lib/email-verification'
-import { Loader2, AlertTriangle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { getEmailVerificationStatus } from "@/lib/email-verification"
+import { AlertTriangle, Loader2 } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export function EmailVerificationCallbackHandler() {
   const router = useRouter()
@@ -15,25 +21,29 @@ export function EmailVerificationCallbackHandler() {
   const [error, setError] = useState<string | null>(null)
 
   // Priority: callbackUrl > next > default
-  const callbackUrl = searchParams.get('callbackUrl') || searchParams.get('next') || '/dashboard'
+  const callbackUrl =
+    searchParams.get("callbackUrl") || searchParams.get("next") || "/dashboard"
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const status = await checkEmailVerificationStatus()
+        const status = await getEmailVerificationStatus()
 
         if (status.isVerified) {
           // Email is verified, redirect to intended destination
           router.push(callbackUrl)
         } else {
           // Not verified, redirect to verification page with callback preserved
-          const verificationUrl = new URL('/auth/verify-email', window.location.origin)
-          verificationUrl.searchParams.set('callbackUrl', callbackUrl)
+          const verificationUrl = new URL(
+            "/auth/verify-email",
+            window.location.origin,
+          )
+          verificationUrl.searchParams.set("callbackUrl", callbackUrl)
           router.push(verificationUrl.toString())
         }
       } catch (err) {
-        console.error('Error checking verification status:', err)
-        setError('Error checking verification status. Please try again.')
+        console.error("Error checking verification status:", err)
+        setError("Error checking verification status. Please try again.")
       } finally {
         setLoading(false)
       }
@@ -52,11 +62,15 @@ export function EmailVerificationCallbackHandler() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+        <div className="space-y-4 text-center">
+          <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
           <div>
-            <h2 className="text-lg font-semibold">Checking verification status...</h2>
-            <p className="text-sm text-muted-foreground">Please wait while we verify your email.</p>
+            <h2 className="text-lg font-semibold">
+              Checking verification status...
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Please wait while we verify your email.
+            </p>
           </div>
         </div>
       </div>
@@ -69,7 +83,7 @@ export function EmailVerificationCallbackHandler() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <AlertTriangle className="text-destructive h-5 w-5" />
               <span>Verification Error</span>
             </CardTitle>
             <CardDescription>
@@ -89,7 +103,7 @@ export function EmailVerificationCallbackHandler() {
 
               <Button
                 variant="outline"
-                onClick={() => router.push('/auth/verify-email')}
+                onClick={() => router.push("/auth/verify-email")}
                 className="w-full"
               >
                 Go to Email Verification
@@ -109,8 +123,8 @@ export function EmailVerificationCallbackHandler() {
       className="flex min-h-screen items-center justify-center"
     >
       <div className="text-center">
-        <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-        <p className="text-sm text-muted-foreground mt-2">Redirecting...</p>
+        <Loader2 className="text-primary mx-auto h-6 w-6 animate-spin" />
+        <p className="text-muted-foreground mt-2 text-sm">Redirecting...</p>
       </div>
     </div>
   )

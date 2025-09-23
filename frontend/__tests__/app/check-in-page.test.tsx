@@ -1,5 +1,5 @@
 import CheckInPage from "@/app/check-in/page"
-import { render, screen, waitFor, act } from "@testing-library/react"
+import { act, render, screen, waitFor } from "@testing-library/react"
 import { vi } from "vitest"
 
 // Mock Next.js navigation
@@ -13,9 +13,7 @@ vi.mock("@/hooks/use-toast", () => ({
 }))
 
 // Mock environment variable
-vi.mock("@/lib/env", () => ({
-  NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
-}))
+vi.mock("@/lib/env", () => ({}))
 
 describe("CheckInPage", () => {
   beforeEach(() => {

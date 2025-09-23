@@ -1,7 +1,7 @@
 locals {
   frontend_app_name = "frontend"
   # Use variable if provided (from Terragrunt), otherwise fall back to relative path
-  frontend_app_dir  = var.frontend_dir != "" ? var.frontend_dir : abspath("${path.module}/../../frontend")
+  frontend_app_dir = var.frontend_dir != "" ? var.frontend_dir : abspath("${path.module}/../../frontend")
 
   # Create a comprehensive hash that includes both file contents and terraform config
   frontend_content_hash = md5(join("", [
@@ -183,6 +183,10 @@ module "cloud_run" {
         }
         BTCPAY_WEBHOOK_SECRET = {
           secret  = "projects/${module.project.number}/secrets/btcpay-webhook-secret"
+          version = "latest"
+        }
+        CRON_SECRET = {
+          secret  = "projects/${module.project.number}/secrets/cron-secret"
           version = "latest"
         }
       }

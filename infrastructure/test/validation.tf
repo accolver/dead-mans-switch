@@ -8,24 +8,17 @@ data "google_project_service" "service_networking" {
   service = "servicenetworking.googleapis.com"
 }
 
-# Test 2: Cloud Scheduler jobs must have valid HTTPS URLs
-# Expected: All scheduler job URIs should start with https://
+// Test 2: Cloud Scheduler jobs must have valid HTTPS URLs for Next.js API endpoints
+// Expected: All scheduler job base URL should start with https://
 resource "null_resource" "validate_scheduler_urls" {
-  # This will fail if URLs don't start with https://
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Validating scheduler job URLs..."
-      # Check process_reminders URL
-      if ! echo "${var.next_public_supabase_url}/functions/v1/process-reminders" | grep -q "^https://"; then
-        echo "ERROR: process_reminders URL must start with https://"
+      echo "Validating scheduler job base URL..."
+      if ! echo "${var.next_public_site_url}" | sed 's/\/*$//' | grep -q "^https://"; then
+        echo "ERROR: NEXT_PUBLIC_SITE_URL must start with https://"
         exit 1
       fi
-      # Check check_secrets URL
-      if ! echo "${var.next_public_supabase_url}/functions/v1/check-secrets" | grep -q "^https://"; then
-        echo "ERROR: check_secrets URL must start with https://"
-        exit 1
-      fi
-      echo "All scheduler URLs are valid HTTPS"
+      echo "Scheduler base URL is valid HTTPS"
     EOT
   }
 }
@@ -68,7 +61,7 @@ locals {
     "storage.googleapis.com",
     "cloudscheduler.googleapis.com",
     "sqladmin.googleapis.com",
-    "servicenetworking.googleapis.com",  # This should be included
+    "servicenetworking.googleapis.com", # This should be included
     "compute.googleapis.com"
   ]
 }
@@ -77,7 +70,7 @@ locals {
 output "validation_results" {
   value = {
     service_networking_enabled = data.google_project_service.service_networking.id != null
-    required_services_count = length(local.required_services)
-    scheduler_url_base = var.next_public_supabase_url
+    required_services_count    = length(local.required_services)
+    scheduler_url_base         = var.next_public_supabase_url
   }
 }

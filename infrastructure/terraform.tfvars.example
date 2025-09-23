@@ -119,14 +119,6 @@ btcpay_store_id       = "YOUR_BTCPAY_STORE_ID_HERE"
 btcpay_webhook_secret = "YOUR_BTCPAY_WEBHOOK_SECRET_HERE"
 
 # ==============================================================================
-# LEGACY SUPABASE VARIABLES (DEPRECATED)
-# ==============================================================================
-# These are maintained for backward compatibility during migration
-# TODO: Remove after completing migration to Cloud SQL
-next_public_supabase_url = ""          # Leave empty for new deployments
-supabase_service_role_key = ""         # Leave empty for new deployments
-
-# ==============================================================================
 # VARIABLE DEFINITIONS AND SECURITY NOTES
 # ==============================================================================
 #

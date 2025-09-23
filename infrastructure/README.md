@@ -71,10 +71,7 @@ The infrastructure automatically configures Supabase cron jobs for your applicat
 For Supabase cron job configuration, ensure these variables are set in your `terraform.tfvars`:
 
 ```hcl
-# Supabase Configuration
-next_public_supabase_url    = "https://your-project-id.supabase.co"
-supabase_service_role_key   = "your-service-role-key-here"
-db_url                      = "postgresql://postgres:[password]@db.[project-id].supabase.co:5432/postgres"
+db_url = "postgresql://postgres:[password]@db.[project-id].supabase.co:5432/postgres"
 ```
 
 ### How It Works
@@ -161,8 +158,6 @@ Variables prefixed with `NEXT_PUBLIC_` are stored as regular environment variabl
 
 - `NEXT_PUBLIC_SITE_URL`
 - `NEXT_PUBLIC_COMPANY`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - And others...
 
 ### Secret Environment Variables

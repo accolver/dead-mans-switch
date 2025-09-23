@@ -1,22 +1,30 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { EmailVerificationPrompt } from '@/components/auth/email-verification'
-import { Card, CardContent } from '@/components/ui/card'
-import { CheckCircle2 } from 'lucide-react'
-import type { User } from '@supabase/supabase-js'
-
-interface EmailVerificationFlowProps {
-  user: User
-  nextUrl?: string
-}
-
-interface SupabaseUser extends User {
+import { EmailVerificationPrompt } from "@/components/auth/email-verification"
+import { Card, CardContent } from "@/components/ui/card"
+import { CheckCircle2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+type MinimalUser = {
+  id?: string
+  email?: string
+  app_metadata?: { provider?: string }
   email_verified?: boolean
 }
 
-export function EmailVerificationFlow({ user, nextUrl = '/dashboard' }: EmailVerificationFlowProps) {
+interface EmailVerificationFlowProps {
+  user: MinimalUser
+  nextUrl?: string
+}
+
+interface SupabaseUser extends MinimalUser {
+  email_verified?: boolean
+}
+
+export function EmailVerificationFlow({
+  user,
+  nextUrl = "/dashboard",
+}: EmailVerificationFlowProps) {
   const router = useRouter()
   const [showPrompt, setShowPrompt] = useState(true)
 
@@ -25,7 +33,12 @@ export function EmailVerificationFlow({ user, nextUrl = '/dashboard' }: EmailVer
 
   useEffect(() => {
     // Auto-skip verification for OAuth users or already verified users
-    if (supabaseUser.email_verified || provider === 'google' || provider === 'github' || provider === 'apple') {
+    if (
+      supabaseUser.email_verified ||
+      provider === "google" ||
+      provider === "github" ||
+      provider === "apple"
+    ) {
       setShowPrompt(false)
       // Short delay to show the success message before redirecting
       const timer = setTimeout(() => {
@@ -41,24 +54,28 @@ export function EmailVerificationFlow({ user, nextUrl = '/dashboard' }: EmailVer
   }
 
   const handleCancel = () => {
-    router.push('/auth/login')
+    router.push("/auth/login")
   }
 
   // Show success message for OAuth or already verified users
   if (!showPrompt) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4 py-16">
-        <Card className="w-full max-w-md mx-auto">
+        <Card className="mx-auto w-full max-w-md">
           <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <CheckCircle2 className="h-16 w-16 text-green-600 mx-auto" />
+            <div className="space-y-4 text-center">
+              <CheckCircle2 className="mx-auto h-16 w-16 text-green-600" />
               <div>
-                <h3 className="text-lg font-semibold text-green-600">Welcome!</h3>
-                <p className="text-sm text-muted-foreground">
-                  {provider === 'google' || provider === 'github' || provider === 'apple'
+                <h3 className="text-lg font-semibold text-green-600">
+                  Welcome!
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {provider === "google" ||
+                  provider === "github" ||
+                  provider === "apple"
                     ? `Your ${provider} account is already verified.`
-                    : 'Your email is already verified.'
-                  } Redirecting...
+                    : "Your email is already verified."}{" "}
+                  Redirecting...
                 </p>
               </div>
             </div>
@@ -72,7 +89,7 @@ export function EmailVerificationFlow({ user, nextUrl = '/dashboard' }: EmailVer
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-16">
       <EmailVerificationPrompt
-        email={user.email || ''}
+        email={user.email || ""}
         onVerificationComplete={handleVerificationComplete}
         onCancel={handleCancel}
       />
