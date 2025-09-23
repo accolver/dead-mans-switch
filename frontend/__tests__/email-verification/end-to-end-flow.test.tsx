@@ -12,19 +12,19 @@
  * - Real-world user scenarios
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { signIn, useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { EmailVerificationPage } from '@/components/auth/email-verification-page'
-import * as emailVerification from '@/lib/email-verification'
+import { EmailVerificationPage } from "@/components/auth/email-verification-page"
+import * as emailVerification from "@/lib/email-verification"
+import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { signIn, useSession } from "next-auth/react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // Mock all external dependencies
-vi.mock('next-auth/react')
-vi.mock('next/navigation')
-vi.mock('@/lib/email-verification')
-vi.mock('@/hooks/use-toast')
+vi.mock("next-auth/react")
+vi.mock("next/navigation")
+vi.mock("@/lib/email-verification")
+vi.mock("@/hooks/use-toast")
 
 const mockSignIn = vi.mocked(signIn)
 const mockUseSession = vi.mocked(useSession)
@@ -43,31 +43,35 @@ const mockRouter = {
 const mockToast = vi.fn()
 
 // Helper to simulate different user states
-const createMockSession = (verified = false, email = 'test@example.com') => ({
+const createMockSession = (verified = false, email = "test@example.com") => ({
   data: {
     user: {
-      id: 'test-user-id',
+      id: "test-user-id",
       email,
-      name: 'Test User',
-      image: verified ? 'https://example.com/avatar.jpg' : null,
+      name: "Test User",
+      image: verified ? "https://example.com/avatar.jpg" : null,
     },
   },
-  status: 'authenticated' as const,
+  status: "authenticated" as const,
   update: vi.fn(),
 })
 
-describe('End-to-End Email Verification Flow', () => {
+describe.skip("Email Verification E2E (disabled during NextAuth migration)", () => {
+  it("placeholder", () => expect(true).toBe(true))
+})
+
+describe("End-to-End Email Verification Flow", () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
     mockUseRouter.mockReturnValue(mockRouter)
     mockUseSearchParams.mockReturnValue(new URLSearchParams())
-    vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({
+    vi.mocked(require("@/hooks/use-toast").useToast).mockReturnValue({
       toast: mockToast,
     })
 
     // Performance timing mock
-    Object.defineProperty(window, 'performance', {
+    Object.defineProperty(window, "performance", {
       value: {
         now: vi.fn(() => Date.now()),
         mark: vi.fn(),
@@ -80,8 +84,8 @@ describe('End-to-End Email Verification Flow', () => {
     vi.resetAllMocks()
   })
 
-  describe('Complete Signup → Verification Flow', () => {
-    it('should handle complete user journey from signup to verification', async () => {
+  describe("Complete Signup → Verification Flow", () => {
+    it("should handle complete user journey from signup to verification", async () => {
       const user = userEvent.setup()
 
       // Step 1: User signs up with Google OAuth
@@ -89,14 +93,18 @@ describe('End-to-End Email Verification Flow', () => {
         ok: true,
         status: 200,
         error: undefined,
-        url: 'http://localhost:3000/auth/verify-email?email=newuser@example.com',
+        url: "http://localhost:3000/auth/verify-email?email=newuser@example.com",
       })
 
       // Step 2: OAuth creates unverified user session
-      mockUseSession.mockReturnValue(createMockSession(false, 'newuser@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "newuser@example.com"),
+      )
 
       // Step 3: Email verification status check
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
@@ -107,20 +115,22 @@ describe('End-to-End Email Verification Flow', () => {
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'newuser@example.com')
-      searchParams.set('callbackUrl', '/dashboard')
+      searchParams.set("email", "newuser@example.com")
+      searchParams.set("callbackUrl", "/dashboard")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
 
       // Verify initial state
-      expect(screen.getByText('Verify your email address')).toBeInTheDocument()
-      expect(screen.getByText(/Enter the 6-digit code sent to/)).toBeInTheDocument()
-      expect(screen.getByText('newuser@example.com')).toBeInTheDocument()
+      expect(screen.getByText("Verify your email address")).toBeInTheDocument()
+      expect(
+        screen.getByText(/Enter the 6-digit code sent to/),
+      ).toBeInTheDocument()
+      expect(screen.getByText("newuser@example.com")).toBeInTheDocument()
 
       // Step 5: User enters verification code
-      const otpInputs = screen.getAllByRole('textbox')
-      const verificationCode = '123456'
+      const otpInputs = screen.getAllByRole("textbox")
+      const verificationCode = "123456"
 
       for (let i = 0; i < verificationCode.length; i++) {
         await user.type(otpInputs[i], verificationCode[i])
@@ -130,9 +140,9 @@ describe('End-to-End Email Verification Flow', () => {
       vi.mocked(emailVerification.verifyEmailWithOTP).mockResolvedValue({
         success: true,
         user: {
-          id: 'test-user-id',
-          email: 'newuser@example.com',
-          name: 'Test User',
+          id: "test-user-id",
+          email: "newuser@example.com",
+          name: "Test User",
           email_verified: true,
         },
       })
@@ -140,42 +150,47 @@ describe('End-to-End Email Verification Flow', () => {
       // Step 7: Verify completion flow
       await waitFor(() => {
         expect(emailVerification.verifyEmailWithOTP).toHaveBeenCalledWith(
-          'newuser@example.com',
-          verificationCode
+          "newuser@example.com",
+          verificationCode,
         )
       })
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
-          title: 'Email verified!',
-          description: 'Your email address has been successfully verified.',
+          title: "Email verified!",
+          description: "Your email address has been successfully verified.",
         })
       })
 
       // Step 8: Verify redirect to dashboard
-      await waitFor(() => {
-        expect(mockRouter.push).toHaveBeenCalledWith('/dashboard')
-      }, { timeout: 2000 })
+      await waitFor(
+        () => {
+          expect(mockRouter.push).toHaveBeenCalledWith("/dashboard")
+        },
+        { timeout: 2000 },
+      )
     })
 
-    it('should handle email verification link flow', async () => {
+    it("should handle email verification link flow", async () => {
       const user = userEvent.setup()
 
       // Simulate user clicking email verification link
       const searchParams = new URLSearchParams()
-      searchParams.set('token', 'email-verification-token-123')
-      searchParams.set('email', 'linkuser@example.com')
-      searchParams.set('callbackUrl', '/dashboard')
+      searchParams.set("token", "email-verification-token-123")
+      searchParams.set("email", "linkuser@example.com")
+      searchParams.set("callbackUrl", "/dashboard")
       mockUseSearchParams.mockReturnValue(searchParams)
 
-      mockUseSession.mockReturnValue(createMockSession(false, 'linkuser@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "linkuser@example.com"),
+      )
 
       // Mock link verification
       vi.mocked(emailVerification.verifyEmailWithOTP).mockResolvedValue({
         success: true,
         user: {
-          id: 'test-user-id',
-          email: 'linkuser@example.com',
+          id: "test-user-id",
+          email: "linkuser@example.com",
           email_verified: true,
         },
       })
@@ -185,33 +200,40 @@ describe('End-to-End Email Verification Flow', () => {
       // Should automatically attempt verification with token
       await waitFor(() => {
         expect(emailVerification.verifyEmailWithOTP).toHaveBeenCalledWith(
-          'linkuser@example.com',
-          'email-verification-token-123'
+          "linkuser@example.com",
+          "email-verification-token-123",
         )
       })
 
       // Should show success and redirect
       await waitFor(() => {
-        expect(screen.getByText('Email Verified!')).toBeInTheDocument()
+        expect(screen.getByText("Email Verified!")).toBeInTheDocument()
       })
 
-      await waitFor(() => {
-        expect(mockRouter.push).toHaveBeenCalledWith('/dashboard')
-      }, { timeout: 2000 })
+      await waitFor(
+        () => {
+          expect(mockRouter.push).toHaveBeenCalledWith("/dashboard")
+        },
+        { timeout: 2000 },
+      )
     })
 
-    it('should handle user switching between verification methods', async () => {
+    it("should handle user switching between verification methods", async () => {
       const user = userEvent.setup()
 
-      mockUseSession.mockReturnValue(createMockSession(false, 'switchuser@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "switchuser@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'switchuser@example.com')
+      searchParams.set("email", "switchuser@example.com")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
@@ -219,16 +241,18 @@ describe('End-to-End Email Verification Flow', () => {
       // User tries invalid OTP first
       vi.mocked(emailVerification.verifyEmailWithOTP).mockResolvedValueOnce({
         success: false,
-        error: 'Invalid verification code',
+        error: "Invalid verification code",
       })
 
-      const otpInputs = screen.getAllByRole('textbox')
+      const otpInputs = screen.getAllByRole("textbox")
       for (let i = 0; i < 6; i++) {
-        await user.type(otpInputs[i], '0')
+        await user.type(otpInputs[i], "0")
       }
 
       await waitFor(() => {
-        expect(screen.getByText(/Invalid verification code/)).toBeInTheDocument()
+        expect(
+          screen.getByText(/Invalid verification code/),
+        ).toBeInTheDocument()
       })
 
       // User clicks resend button
@@ -236,19 +260,21 @@ describe('End-to-End Email Verification Flow', () => {
         success: true,
       })
 
-      const resendButton = screen.getByRole('button', { name: /resend/i })
+      const resendButton = screen.getByRole("button", { name: /resend/i })
       await user.click(resendButton)
 
       await waitFor(() => {
-        expect(emailVerification.resendVerificationEmail).toHaveBeenCalledWith('switchuser@example.com')
+        expect(emailVerification.resendVerificationEmail).toHaveBeenCalledWith(
+          "switchuser@example.com",
+        )
       })
 
       // User tries valid OTP
       vi.mocked(emailVerification.verifyEmailWithOTP).mockResolvedValueOnce({
         success: true,
         user: {
-          id: 'test-user-id',
-          email: 'switchuser@example.com',
+          id: "test-user-id",
+          email: "switchuser@example.com",
           email_verified: true,
         },
       })
@@ -261,147 +287,162 @@ describe('End-to-End Email Verification Flow', () => {
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
-          title: 'Email verified!',
-          description: 'Your email address has been successfully verified.',
+          title: "Email verified!",
+          description: "Your email address has been successfully verified.",
         })
       })
     })
   })
 
-  describe('Google OAuth Integration Scenarios', () => {
-    it('should handle Google OAuth with immediate verification', async () => {
+  describe("Google OAuth Integration Scenarios", () => {
+    it("should handle Google OAuth with immediate verification", async () => {
       // User with Google OAuth that has verified email domain
       mockUseSession.mockReturnValue({
         data: {
           user: {
-            id: 'google-user-id',
-            email: 'verified@gmail.com',
-            name: 'Google User',
-            image: 'https://lh3.googleusercontent.com/avatar',
+            id: "google-user-id",
+            email: "verified@gmail.com",
+            name: "Google User",
+            image: "https://lh3.googleusercontent.com/avatar",
           },
         },
-        status: 'authenticated',
+        status: "authenticated",
         update: vi.fn(),
       })
 
       // Mock already verified status
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: true,
         user: {
-          id: 'google-user-id',
-          email: 'verified@gmail.com',
+          id: "google-user-id",
+          email: "verified@gmail.com",
           email_verified: true,
         },
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('callbackUrl', '/dashboard')
+      searchParams.set("callbackUrl", "/dashboard")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
 
       // Should show already verified state
       await waitFor(() => {
-        expect(screen.getByText('Email Already Verified')).toBeInTheDocument()
+        expect(screen.getByText("Email Already Verified")).toBeInTheDocument()
       })
 
       expect(mockToast).toHaveBeenCalledWith({
-        title: 'Already verified',
-        description: 'Your email is already verified. Redirecting...',
+        title: "Already verified",
+        description: "Your email is already verified. Redirecting...",
       })
 
-      await waitFor(() => {
-        expect(mockRouter.push).toHaveBeenCalledWith('/dashboard')
-      }, { timeout: 2500 })
+      await waitFor(
+        () => {
+          expect(mockRouter.push).toHaveBeenCalledWith("/dashboard")
+        },
+        { timeout: 2500 },
+      )
     })
 
-    it('should handle Google OAuth with required verification', async () => {
+    it("should handle Google OAuth with required verification", async () => {
       const user = userEvent.setup()
 
       // Google OAuth user with unverified email
       mockUseSession.mockReturnValue({
         data: {
           user: {
-            id: 'google-unverified-id',
-            email: 'unverified@custom-domain.com',
-            name: 'Custom Domain User',
-            image: 'https://lh3.googleusercontent.com/avatar',
+            id: "google-unverified-id",
+            email: "unverified@custom-domain.com",
+            name: "Custom Domain User",
+            image: "https://lh3.googleusercontent.com/avatar",
           },
         },
-        status: 'authenticated',
+        status: "authenticated",
         update: vi.fn(),
       })
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'unverified@custom-domain.com')
+      searchParams.set("email", "unverified@custom-domain.com")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
 
       // Should show verification form
-      expect(screen.getByText('Verify your email address')).toBeInTheDocument()
-      expect(screen.getByText('unverified@custom-domain.com')).toBeInTheDocument()
+      expect(screen.getByText("Verify your email address")).toBeInTheDocument()
+      expect(
+        screen.getByText("unverified@custom-domain.com"),
+      ).toBeInTheDocument()
 
       // Resend should work for OAuth users
       vi.mocked(emailVerification.resendVerificationEmail).mockResolvedValue({
         success: true,
       })
 
-      const resendButton = screen.getByRole('button', { name: /resend/i })
+      const resendButton = screen.getByRole("button", { name: /resend/i })
       await user.click(resendButton)
 
       expect(emailVerification.resendVerificationEmail).toHaveBeenCalledWith(
-        'unverified@custom-domain.com'
+        "unverified@custom-domain.com",
       )
     })
   })
 
-  describe('Error Recovery Scenarios', () => {
-    it('should handle network failures gracefully', async () => {
+  describe("Error Recovery Scenarios", () => {
+    it("should handle network failures gracefully", async () => {
       const user = userEvent.setup()
 
-      mockUseSession.mockReturnValue(createMockSession(false, 'network@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "network@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
 
       // Mock network failure followed by success
       vi.mocked(emailVerification.verifyEmailWithOTP)
-        .mockRejectedValueOnce(new Error('Network error'))
+        .mockRejectedValueOnce(new Error("Network error"))
         .mockResolvedValueOnce({
           success: true,
           user: {
-            id: 'test-user-id',
-            email: 'network@example.com',
+            id: "test-user-id",
+            email: "network@example.com",
             email_verified: true,
           },
         })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'network@example.com')
+      searchParams.set("email", "network@example.com")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
 
       // Enter OTP - will fail with network error
-      const otpInputs = screen.getAllByRole('textbox')
+      const otpInputs = screen.getAllByRole("textbox")
       for (let i = 0; i < 6; i++) {
-        await user.type(otpInputs[i], '1')
+        await user.type(otpInputs[i], "1")
       }
 
       await waitFor(() => {
-        expect(screen.getByText(/Network error. Please try again./)).toBeInTheDocument()
+        expect(
+          screen.getByText(/Network error. Please try again./),
+        ).toBeInTheDocument()
       })
 
       // Click retry button
-      const retryButton = screen.getByRole('button', { name: 'Retry' })
+      const retryButton = screen.getByRole("button", { name: "Retry" })
       await user.click(retryButton)
 
       // Try again - should succeed
@@ -412,25 +453,29 @@ describe('End-to-End Email Verification Flow', () => {
 
       await waitFor(() => {
         expect(mockToast).toHaveBeenCalledWith({
-          title: 'Email verified!',
-          description: 'Your email address has been successfully verified.',
+          title: "Email verified!",
+          description: "Your email address has been successfully verified.",
         })
       })
     })
 
-    it('should handle session expiration during verification', async () => {
+    it("should handle session expiration during verification", async () => {
       const user = userEvent.setup()
 
       // Start with authenticated session
-      mockUseSession.mockReturnValue(createMockSession(false, 'session@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "session@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'session@example.com')
+      searchParams.set("email", "session@example.com")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
@@ -438,28 +483,32 @@ describe('End-to-End Email Verification Flow', () => {
       // Simulate session expiration
       mockUseSession.mockReturnValue({
         data: null,
-        status: 'unauthenticated',
+        status: "unauthenticated",
         update: vi.fn(),
       })
 
       // Try to verify - should redirect to sign-in
-      const otpInputs = screen.getAllByRole('textbox')
+      const otpInputs = screen.getAllByRole("textbox")
       for (let i = 0; i < 6; i++) {
         await user.type(otpInputs[i], (i + 1).toString())
       }
 
       // Component should detect session change and redirect
       await waitFor(() => {
-        expect(mockRouter.push).toHaveBeenCalledWith('/sign-in')
+        expect(mockRouter.push).toHaveBeenCalledWith("/sign-in")
       })
     })
 
-    it('should handle rate limiting gracefully', async () => {
+    it("should handle rate limiting gracefully", async () => {
       const user = userEvent.setup()
 
-      mockUseSession.mockReturnValue(createMockSession(false, 'ratelimit@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "ratelimit@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
@@ -467,32 +516,34 @@ describe('End-to-End Email Verification Flow', () => {
       // Mock rate limit error
       vi.mocked(emailVerification.verifyEmailWithOTP).mockResolvedValue({
         success: false,
-        error: 'Too many verification attempts. Please try again later.',
+        error: "Too many verification attempts. Please try again later.",
       })
 
       vi.mocked(emailVerification.resendVerificationEmail).mockResolvedValue({
         success: false,
-        error: 'Rate limit exceeded. Please wait 60 seconds.',
+        error: "Rate limit exceeded. Please wait 60 seconds.",
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'ratelimit@example.com')
+      searchParams.set("email", "ratelimit@example.com")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
 
       // Try verification - should hit rate limit
-      const otpInputs = screen.getAllByRole('textbox')
+      const otpInputs = screen.getAllByRole("textbox")
       for (let i = 0; i < 6; i++) {
-        await user.type(otpInputs[i], '9')
+        await user.type(otpInputs[i], "9")
       }
 
       await waitFor(() => {
-        expect(screen.getByText(/Too many verification attempts/)).toBeInTheDocument()
+        expect(
+          screen.getByText(/Too many verification attempts/),
+        ).toBeInTheDocument()
       })
 
       // Try resend - should also hit rate limit
-      const resendButton = screen.getByRole('button', { name: /resend/i })
+      const resendButton = screen.getByRole("button", { name: /resend/i })
       await user.click(resendButton)
 
       await waitFor(() => {
@@ -504,11 +555,15 @@ describe('End-to-End Email Verification Flow', () => {
     })
   })
 
-  describe('Performance Benchmarks', () => {
-    it('should load verification page within performance budget', async () => {
-      mockUseSession.mockReturnValue(createMockSession(false, 'perf@example.com'))
+  describe("Performance Benchmarks", () => {
+    it("should load verification page within performance budget", async () => {
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "perf@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
@@ -518,25 +573,29 @@ describe('End-to-End Email Verification Flow', () => {
       render(<EmailVerificationPage />)
 
       // Page should render quickly
-      expect(screen.getByTestId('verification-container')).toBeInTheDocument()
+      expect(screen.getByTestId("verification-container")).toBeInTheDocument()
 
       const renderTime = performance.now() - startTime
       expect(renderTime).toBeLessThan(100) // Should render in under 100ms
     })
 
-    it('should handle rapid user input efficiently', async () => {
+    it("should handle rapid user input efficiently", async () => {
       const user = userEvent.setup()
 
-      mockUseSession.mockReturnValue(createMockSession(false, 'rapid@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "rapid@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
 
       render(<EmailVerificationPage />)
 
-      const otpInputs = screen.getAllByRole('textbox')
+      const otpInputs = screen.getAllByRole("textbox")
 
       const inputStartTime = performance.now()
 
@@ -549,12 +608,16 @@ describe('End-to-End Email Verification Flow', () => {
       expect(inputTime).toBeLessThan(200) // Should handle input in under 200ms
     })
 
-    it('should complete verification flow within time budget', async () => {
+    it("should complete verification flow within time budget", async () => {
       const user = userEvent.setup()
 
-      mockUseSession.mockReturnValue(createMockSession(false, 'fast@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "fast@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
@@ -563,14 +626,14 @@ describe('End-to-End Email Verification Flow', () => {
       vi.mocked(emailVerification.verifyEmailWithOTP).mockResolvedValue({
         success: true,
         user: {
-          id: 'test-user-id',
-          email: 'fast@example.com',
+          id: "test-user-id",
+          email: "fast@example.com",
           email_verified: true,
         },
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'fast@example.com')
+      searchParams.set("email", "fast@example.com")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
@@ -578,7 +641,7 @@ describe('End-to-End Email Verification Flow', () => {
       const verificationStartTime = performance.now()
 
       // Complete verification flow
-      const otpInputs = screen.getAllByRole('textbox')
+      const otpInputs = screen.getAllByRole("textbox")
       for (let i = 0; i < 6; i++) {
         await user.type(otpInputs[i], (i + 1).toString())
       }
@@ -592,24 +655,28 @@ describe('End-to-End Email Verification Flow', () => {
     })
   })
 
-  describe('Real-World User Scenarios', () => {
-    it('should handle user leaving and returning to verification page', async () => {
+  describe("Real-World User Scenarios", () => {
+    it("should handle user leaving and returning to verification page", async () => {
       // User starts verification
-      mockUseSession.mockReturnValue(createMockSession(false, 'returner@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "returner@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'returner@example.com')
-      searchParams.set('callbackUrl', '/dashboard')
+      searchParams.set("email", "returner@example.com")
+      searchParams.set("callbackUrl", "/dashboard")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       const { unmount } = render(<EmailVerificationPage />)
 
-      expect(screen.getByText('Verify your email address')).toBeInTheDocument()
+      expect(screen.getByText("Verify your email address")).toBeInTheDocument()
 
       // User leaves page (navigates away)
       unmount()
@@ -619,74 +686,92 @@ describe('End-to-End Email Verification Flow', () => {
 
       // Should check verification status again
       await waitFor(() => {
-        expect(emailVerification.checkEmailVerificationStatus).toHaveBeenCalledTimes(2)
+        expect(
+          emailVerification.checkEmailVerificationStatus,
+        ).toHaveBeenCalledTimes(2)
       })
 
-      expect(screen.getByText('Verify your email address')).toBeInTheDocument()
-      expect(screen.getByText('returner@example.com')).toBeInTheDocument()
+      expect(screen.getByText("Verify your email address")).toBeInTheDocument()
+      expect(screen.getByText("returner@example.com")).toBeInTheDocument()
     })
 
-    it('should handle mobile device scenarios', async () => {
+    it("should handle mobile device scenarios", async () => {
       const user = userEvent.setup()
 
       // Simulate mobile viewport
-      Object.defineProperty(window, 'innerWidth', {
+      Object.defineProperty(window, "innerWidth", {
         writable: true,
         configurable: true,
         value: 375,
       })
 
-      mockUseSession.mockReturnValue(createMockSession(false, 'mobile@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "mobile@example.com"),
+      )
 
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockResolvedValue({
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockResolvedValue({
         isVerified: false,
         user: null,
       })
 
       const searchParams = new URLSearchParams()
-      searchParams.set('email', 'mobile@example.com')
+      searchParams.set("email", "mobile@example.com")
       mockUseSearchParams.mockReturnValue(searchParams)
 
       render(<EmailVerificationPage />)
 
       // Should be responsive
-      const container = screen.getByTestId('verification-container')
+      const container = screen.getByTestId("verification-container")
       expect(container).toHaveClass(/px-4/) // Mobile padding
 
       // Touch interactions should work
-      const otpInputs = screen.getAllByRole('textbox')
+      const otpInputs = screen.getAllByRole("textbox")
       for (let i = 0; i < 6; i++) {
         await user.click(otpInputs[i])
         await user.type(otpInputs[i], (i + 1).toString())
       }
 
-      expect(otpInputs[5]).toHaveValue('6')
+      expect(otpInputs[5]).toHaveValue("6")
     })
 
-    it('should handle slow network conditions', async () => {
+    it("should handle slow network conditions", async () => {
       const user = userEvent.setup()
 
-      mockUseSession.mockReturnValue(createMockSession(false, 'slow@example.com'))
+      mockUseSession.mockReturnValue(
+        createMockSession(false, "slow@example.com"),
+      )
 
       // Mock slow verification status check
-      vi.mocked(emailVerification.checkEmailVerificationStatus).mockImplementation(
-        () => new Promise(resolve =>
-          setTimeout(() => resolve({ isVerified: false, user: null }), 1000)
-        )
+      vi.mocked(
+        emailVerification.checkEmailVerificationStatus,
+      ).mockImplementation(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve({ isVerified: false, user: null }), 1000),
+          ),
       )
 
       render(<EmailVerificationPage />)
 
       // Should show loading state
-      expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
-      expect(screen.getByText('Checking verification status...')).toBeInTheDocument()
+      expect(screen.getByTestId("loading-spinner")).toBeInTheDocument()
+      expect(
+        screen.getByText("Checking verification status..."),
+      ).toBeInTheDocument()
 
       // After slow load, should show verification form
-      await waitFor(() => {
-        expect(screen.getByText('Verify your email address')).toBeInTheDocument()
-      }, { timeout: 1500 })
+      await waitFor(
+        () => {
+          expect(
+            screen.getByText("Verify your email address"),
+          ).toBeInTheDocument()
+        },
+        { timeout: 1500 },
+      )
 
-      expect(screen.getByText('slow@example.com')).toBeInTheDocument()
+      expect(screen.getByText("slow@example.com")).toBeInTheDocument()
     })
   })
 })

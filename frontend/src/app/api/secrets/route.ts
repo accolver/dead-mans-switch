@@ -4,6 +4,7 @@ import { secretsService } from "@/lib/db/drizzle";
 import { RobustSecretsService } from "@/lib/db/secrets-service-robust";
 import { encryptMessage } from "@/lib/encryption";
 import { secretSchema } from "@/lib/schemas/secret";
+import type { Session } from "next-auth";
 import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
@@ -13,9 +14,13 @@ export async function POST(request: NextRequest) {
 
   try {
     // Use NextAuth for authentication instead of Supabase auth
-    let session;
+    let session: Session | null;
     try {
-      session = await getServerSession(authConfig as any);
+      type GetServerSessionOptions = Parameters<typeof getServerSession>[0];
+      session =
+        (await getServerSession(authConfig as GetServerSessionOptions)) as
+          | Session
+          | null;
     } catch (sessionError) {
       console.error("NextAuth session error:", sessionError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

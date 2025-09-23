@@ -1,8 +1,10 @@
 import { authConfig } from "@/lib/auth-config";
 import { ensureUserExists } from "@/lib/auth/user-verification";
 import { db, secretsService } from "@/lib/db/drizzle";
+import type { SecretUpdate } from "@/lib/db/schema";
 import { checkinHistory } from "@/lib/db/schema";
 import { mapDrizzleSecretToSupabaseShape } from "@/lib/db/secret-mapper";
+import type { Session } from "next-auth";
 import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -14,7 +16,11 @@ export async function POST(
     const { id } = await params;
 
     // Use NextAuth for authentication
-    const session = await getServerSession(authConfig as any);
+    const session = (await getServerSession(
+      authConfig as Parameters<typeof getServerSession>[0],
+    )) as
+      | Session
+      | null;
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -47,10 +53,8 @@ export async function POST(
     nextCheckIn.setDate(nextCheckIn.getDate() + secret.checkInDays);
 
     // Update the secret with new check-in times
-    const updatedSecret = await secretsService.update(id, {
-      lastCheckIn: now,
-      nextCheckIn: nextCheckIn,
-    });
+    const updatePayload = { lastCheckIn: now, nextCheckIn } as SecretUpdate;
+    const updatedSecret = await secretsService.update(id, updatePayload);
 
     if (!updatedSecret) {
       return NextResponse.json({ error: "Failed to update secret" }, {

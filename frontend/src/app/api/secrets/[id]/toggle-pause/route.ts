@@ -1,6 +1,7 @@
 import { authConfig } from "@/lib/auth-config";
 import { secretsService } from "@/lib/db/drizzle";
 import { mapDrizzleSecretToSupabaseShape } from "@/lib/db/secret-mapper";
+import type { NextAuthOptions, Session } from "next-auth";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 
@@ -12,7 +13,9 @@ export async function POST(
     const { id } = await params;
 
     // Use NextAuth for authentication
-    const session = await getServerSession(authConfig as any);
+    const session = (await getServerSession(authConfig as NextAuthOptions)) as
+      | Session
+      | null;
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -1,11 +1,17 @@
-import { secretsService } from "@/lib/db/drizzle";
+import { authConfig } from "@/lib/auth-config";
+import { db, secretsService } from "@/lib/db/drizzle";
+import {
+  checkinHistory,
+  checkInTokens,
+  emailNotifications,
+  reminderJobs,
+  secrets as secretsTable,
+} from "@/lib/db/schema";
+import { and, eq } from "drizzle-orm";
+import type { Session } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getServerSession } from "next-auth/next";
-import { authConfig } from "@/lib/auth-config";
-import { db } from "@/lib/db/drizzle";
-import { and, eq } from "drizzle-orm";
-import { checkInTokens, checkinHistory, emailNotifications, reminderJobs, secrets as secretsTable } from "@/lib/db/schema";
 
 export async function GET(
   request: Request,
@@ -13,9 +19,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    
+
     // Use NextAuth for authentication
-    const session = await getServerSession(authConfig as any);
+    type GetServerSessionOptions = Parameters<typeof getServerSession>[0];
+    const session =
+      (await getServerSession(authConfig as GetServerSessionOptions)) as
+        | Session
+        | null;
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -52,9 +62,13 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    
+
     // Use NextAuth for authentication
-    const session = await getServerSession(authConfig as any);
+    type GetServerSessionOptions = Parameters<typeof getServerSession>[0];
+    const session =
+      (await getServerSession(authConfig as GetServerSessionOptions)) as
+        | Session
+        | null;
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -101,9 +115,13 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    
+
     // Use NextAuth for authentication
-    const session = await getServerSession(authConfig as any);
+    type GetServerSessionOptions = Parameters<typeof getServerSession>[0];
+    const session =
+      (await getServerSession(authConfig as GetServerSessionOptions)) as
+        | Session
+        | null;
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -120,9 +138,11 @@ export async function DELETE(
       await tx.delete(checkinHistory).where(eq(checkinHistory.secretId, id));
       await tx.delete(checkInTokens).where(eq(checkInTokens.secretId, id));
       await tx.delete(reminderJobs).where(eq(reminderJobs.secretId, id));
-      await tx.delete(emailNotifications).where(eq(emailNotifications.secretId, id));
+      await tx.delete(emailNotifications).where(
+        eq(emailNotifications.secretId, id),
+      );
       await tx.delete(secretsTable).where(
-        and(eq(secretsTable.id, id), eq(secretsTable.userId, session.user.id))
+        and(eq(secretsTable.id, id), eq(secretsTable.userId, session.user.id)),
       );
     });
 
