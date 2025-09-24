@@ -32,7 +32,7 @@ function toIsoString(value: unknown): string | null {
   }
 }
 
-export function mapDrizzleSecretToSupabaseShape(row: any): ApiSecret {
+export function mapDrizzleSecretToApiShape(row: any): ApiSecret {
   return {
     id: row.id,
     user_id: row.userId,

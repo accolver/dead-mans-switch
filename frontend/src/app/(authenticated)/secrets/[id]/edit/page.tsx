@@ -1,7 +1,7 @@
 import { EditSecretForm } from "@/components/forms/editSecretForm"
 import { authConfig } from "@/lib/auth-config"
 import { getSecret } from "@/lib/db/operations"
-import { mapDrizzleSecretToSupabaseShape } from "@/lib/db/secret-mapper"
+import { mapDrizzleSecretToApiShape } from "@/lib/db/secret-mapper"
 import type { Session } from "next-auth"
 import { getServerSession } from "next-auth/next"
 import { notFound, redirect } from "next/navigation"
@@ -25,7 +25,7 @@ export default async function EditSecretPage({ params }: EditSecretPageProps) {
       notFound()
     }
 
-    const mapped = mapDrizzleSecretToSupabaseShape(secret)
+    const mapped = mapDrizzleSecretToApiShape(secret)
 
     const initialData = {
       title: mapped.title,

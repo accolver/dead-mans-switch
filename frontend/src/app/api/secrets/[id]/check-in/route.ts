@@ -3,7 +3,7 @@ import { ensureUserExists } from "@/lib/auth/user-verification";
 import { db, secretsService } from "@/lib/db/drizzle";
 import type { SecretUpdate } from "@/lib/db/schema";
 import { checkinHistory } from "@/lib/db/schema";
-import { mapDrizzleSecretToSupabaseShape } from "@/lib/db/secret-mapper";
+import { mapDrizzleSecretToApiShape } from "@/lib/db/secret-mapper";
 import type { Session } from "next-auth";
 import { getServerSession } from "next-auth/next";
 import { NextRequest, NextResponse } from "next/server";
@@ -70,7 +70,7 @@ export async function POST(
       nextCheckIn: nextCheckIn,
     });
 
-    const mapped = mapDrizzleSecretToSupabaseShape(updatedSecret);
+    const mapped = mapDrizzleSecretToApiShape(updatedSecret);
     return NextResponse.json({
       success: true,
       secret: mapped,

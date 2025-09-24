@@ -1,6 +1,6 @@
 import { authConfig } from "@/lib/auth-config";
 import { secretsService } from "@/lib/db/drizzle";
-import { mapDrizzleSecretToSupabaseShape } from "@/lib/db/secret-mapper";
+import { mapDrizzleSecretToApiShape } from "@/lib/db/secret-mapper";
 import type { Session } from "next-auth";
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
@@ -40,7 +40,7 @@ export async function POST(
       });
     }
 
-    const mapped = mapDrizzleSecretToSupabaseShape(updatedSecret);
+    const mapped = mapDrizzleSecretToApiShape(updatedSecret);
     return NextResponse.json({
       success: true,
       secret: mapped,

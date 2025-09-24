@@ -7,7 +7,7 @@
 
 import { authConfig } from "@/lib/auth-config";
 import { secretsService } from "@/lib/db/drizzle";
-import { mapDrizzleSecretToSupabaseShape } from "@/lib/db/secret-mapper";
+import { mapDrizzleSecretToApiShape } from "@/lib/db/secret-mapper";
 import type { Session } from "next-auth";
 import { getServerSession } from "next-auth/next";
 
@@ -127,7 +127,7 @@ export class DashboardService {
         "secretsService.getAllByUser",
       );
 
-      const mapped = (secrets || []).map(mapDrizzleSecretToSupabaseShape);
+      const mapped = (secrets || []).map(mapDrizzleSecretToApiShape);
       console.log(
         "[DashboardService] Successfully fetched",
         mapped.length,
