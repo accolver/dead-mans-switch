@@ -186,7 +186,7 @@ module "cloud_run" {
           version = "latest"
         }
         CRON_SECRET = {
-          secret  = "projects/${module.project.number}/secrets/cron-secret"
+          secret  = google_secret_manager_secret.cron_secret.id
           version = "latest"
         }
       }

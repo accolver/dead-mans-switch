@@ -56,3 +56,28 @@ export function mapDrizzleSecretToSupabaseShape(row: any): ApiSecret {
     updated_at: toIsoString(row.updatedAt)!,
   };
 }
+
+export function mapApiSecretToDrizzleShape(apiSecret: ApiSecret): any {
+  return {
+    id: apiSecret.id,
+    userId: apiSecret.user_id,
+    title: apiSecret.title,
+    recipientName: apiSecret.recipient_name,
+    recipientEmail: apiSecret.recipient_email,
+    recipientPhone: apiSecret.recipient_phone,
+    contactMethod: apiSecret.contact_method,
+    checkInDays: apiSecret.check_in_days,
+    status: apiSecret.status,
+    serverShare: apiSecret.server_share,
+    iv: apiSecret.iv,
+    authTag: apiSecret.auth_tag,
+    sssSharesTotal: apiSecret.sss_shares_total,
+    sssThreshold: apiSecret.sss_threshold,
+    isTriggered: apiSecret.is_triggered,
+    lastCheckIn: apiSecret.last_check_in ? new Date(apiSecret.last_check_in) : null,
+    nextCheckIn: apiSecret.next_check_in ? new Date(apiSecret.next_check_in) : null,
+    triggeredAt: apiSecret.triggered_at ? new Date(apiSecret.triggered_at) : null,
+    createdAt: new Date(apiSecret.created_at),
+    updatedAt: new Date(apiSecret.updated_at),
+  };
+}

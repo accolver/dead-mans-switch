@@ -20,6 +20,14 @@ export type Database = {
     Tables: {
       secrets: { Row: Secret; Insert: SecretInsert; Update: SecretUpdate };
       users: { Row: User; Insert: UserInsert; Update: UserUpdate };
+      user_tiers: { Row: any; Insert: any; Update: any };
+      user_subscriptions: { Row: any; Insert: any; Update: any };
+    };
+    Enums: {
+      contact_method: "email" | "phone" | "both";
+      secret_status: "active" | "paused" | "triggered";
+      subscription_tier: "free" | "pro";
+      subscription_status: "active" | "canceled" | "past_due";
     };
   };
 };

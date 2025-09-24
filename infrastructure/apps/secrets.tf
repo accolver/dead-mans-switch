@@ -75,13 +75,5 @@ module "frontend_secrets" {
         "roles/secretmanager.secretAccessor" = ["serviceAccount:${module.frontend_service_account.email}"]
       }
     }
-    cron-secret = {
-      versions = {
-        current = { enabled = true, data = var.cron_secret }
-      }
-      iam = {
-        "roles/secretmanager.secretAccessor" = ["serviceAccount:${module.frontend_service_account.email}"]
-      }
-    }
   }
 }

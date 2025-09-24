@@ -196,9 +196,3 @@ variable "btcpay_webhook_secret" {
   sensitive   = true
 }
 
-# Scheduler auth secret for calling Next.js cron endpoints
-variable "cron_secret" {
-  description = "Bearer secret used by Cloud Scheduler to call Next.js cron endpoints"
-  type        = string
-  sensitive   = true
-}

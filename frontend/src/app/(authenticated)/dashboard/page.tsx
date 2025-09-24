@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoadingIndicator } from "@/components/ui/loading-indicator"
 import { DashboardService, DashboardTimeoutError } from "@/lib/dashboard/dashboard-service"
+import { mapApiSecretToDrizzleShape } from "@/lib/db/secret-mapper"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
@@ -68,7 +69,7 @@ async function SecretsLoader() {
     return (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-6 xl:grid-cols-3">
         {secrets.map((secret) => (
-          <SecretCard key={secret.id} secret={secret} />
+          <SecretCard key={secret.id} secret={mapApiSecretToDrizzleShape(secret)} />
         ))}
       </div>
     )
