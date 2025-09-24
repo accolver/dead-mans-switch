@@ -14,7 +14,7 @@
 			"taskTitle": "Complete Email Verification System Implementation",
 			"complexityScore": 7,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "Break down email verification system into: 1) Configure Supabase email settings and OTP verification, 2) Fix Google OAuth email_verified flag implementation, 3) Update middleware to enforce email verification, 4) Create email verification UI components and flows, 5) Implement email verification status management, 6) Add comprehensive testing for all verification flows",
+			"expansionPrompt": "Break down email verification system into: 1) Configure email settings and OTP verification, 2) Fix Google OAuth email_verified flag implementation, 3) Update middleware to enforce email verification, 4) Create email verification UI components and flows, 5) Implement email verification status management, 6) Add comprehensive testing for all verification flows",
 			"reasoning": "Medium-high complexity due to OAuth integration, middleware updates, and UI components. Existing auth structure and middleware present but email verification not properly implemented. Multiple integration points require careful testing."
 		},
 		{
@@ -22,7 +22,7 @@
 			"taskTitle": "Production SMTP Configuration and Email Delivery Setup",
 			"complexityScore": 6,
 			"recommendedSubtasks": 5,
-			"expansionPrompt": "Structure SMTP implementation as: 1) Configure production SMTP provider (SendGrid/Mailgun/AWS SES), 2) Update Supabase email templates for reminders and notifications, 3) Implement email delivery monitoring and retry logic, 4) Set up SPF/DKIM email authentication, 5) Handle bounce/complaint processing and batch limits",
+			"expansionPrompt": "Structure SMTP implementation as: 1) Configure production SMTP provider (SendGrid/Mailgun/AWS SES), 2) Create email templates for reminders and notifications, 3) Implement email delivery monitoring and retry logic, 4) Set up SPF/DKIM email authentication, 5) Handle bounce/complaint processing and batch limits",
 			"reasoning": "Moderate complexity involving third-party SMTP integration, email authentication setup, and monitoring. Existing email functions present but need production-grade configuration."
 		},
 		{
@@ -54,8 +54,8 @@
 			"taskTitle": "Cron Job Implementation and Testing",
 			"complexityScore": 7,
 			"recommendedSubtasks": 6,
-			"expansionPrompt": "Organize cron job implementation as: 1) Deploy process-reminders Edge Function to production, 2) Configure Supabase cron jobs with multiple reminder intervals, 3) Implement secret disclosure automation for missed deadlines, 4) Add monitoring and alerting for cron job failures, 5) Implement dead letter queue for failed notifications, 6) Add admin dashboard for cron job monitoring",
-			"reasoning": "Medium-high complexity involving critical automation, multiple timing intervals, and failure handling. Google Cloud Scheduler configuration exists but Edge Functions deployment and monitoring incomplete."
+			"expansionPrompt": "Organize cron job implementation as: 1) Deploy process-reminders function to production, 2) Configure Cloud Scheduler with multiple reminder intervals, 3) Implement secret disclosure automation for missed deadlines, 4) Add monitoring and alerting for cron job failures, 5) Implement dead letter queue for failed notifications, 6) Add admin dashboard for cron job monitoring",
+			"reasoning": "Medium-high complexity involving critical automation, multiple timing intervals, and failure handling. Google Cloud Scheduler configuration exists but function deployment and monitoring incomplete."
 		},
 		{
 			"taskId": 7,
@@ -63,7 +63,7 @@
 			"complexityScore": 6,
 			"recommendedSubtasks": 6,
 			"expansionPrompt": "Structure SMS implementation as: 1) Integrate Twilio API for SMS sending, 2) Update contact methods to support SMS preferences, 3) Implement SMS templates for reminders and notifications, 4) Add phone number verification flow, 5) Update reminder processing for multi-channel delivery, 6) Add SMS delivery tracking and compliance handling",
-			"reasoning": "Moderate complexity with third-party API integration, user preference management, and compliance requirements. Supabase SMS configuration exists and some SMS code present in process-reminders function."
+			"reasoning": "Moderate complexity with third-party API integration, user preference management, and compliance requirements. SMS configuration needed and some SMS code present in process-reminders function."
 		},
 		{
 			"taskId": 8,
